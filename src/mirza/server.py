@@ -4,7 +4,6 @@ Run with: python -m mirza.server
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from aiohttp import web

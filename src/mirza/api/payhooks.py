@@ -11,7 +11,7 @@ from aiohttp import web
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.models import PaymentReport, Setting, User
+from mirza.models import PaymentReport, Setting
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,6 @@ async def _report(s, kind: str, text: str) -> None:
 async def settle_tuple(request_body: bytes, query: dict[str, str],
                        gateway_name: str, kv_extra: list[str]) -> tuple[bool, str]:
     """Verify + idempotent settle; returns (paid, order_id)."""
-    import json as _json
     from mirza.registry import registry
     from mirza.payments.service import PaymentService
     session = get_sessionmaker()()
@@ -84,7 +83,6 @@ async def settle_tuple(request_body: bytes, query: dict[str, str],
 
 async def settle(request_body: bytes, query: dict[str, str],
                  gateway_name: str, kv_extra: list[str]) -> web.Response:
-    import json as _json
     from mirza.registry import registry
     from mirza.payments.service import PaymentService
     session = get_sessionmaker()()

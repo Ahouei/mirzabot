@@ -7,7 +7,6 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.i18n import t
 from mirza.models import Setting, User
 
 router = Router(name="menu")
@@ -67,7 +66,7 @@ async def help_menu(message: Message, t=None):  # noqa: A002
         text = res.scalar_one_or_none()
     finally:
         await session.close()
-    await message.answer(text or str(t("users.mainMenu.text_help")))
+    await message.answer(text or str(t("users.mainMenu.help")))
 
 
 @router.callback_query(F.data == "confirmchannel")

@@ -433,7 +433,7 @@ async def _settle(ctx: JobContext, svc, order) -> None:
         await svc.settle_wallet_topup(order, cashback_pct=cashback)
 
 
-async def _panel_stats(panels: "PanelService", panel) -> dict:
+async def _panel_stats(panels, panel) -> dict:
     from mirza.panels.service import PanelService as _P
     adapter = _P._adapter_for(panel)
     try:

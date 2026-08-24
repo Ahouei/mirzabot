@@ -16,7 +16,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.models import Botsaz, Invoice, Product, Setting, User
+from mirza.models import Invoice, Product, Setting, User
 
 router = Router(name="whitelabel_shop")
 

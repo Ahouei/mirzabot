@@ -13,7 +13,6 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.i18n import t as _t
 from mirza.models import Invoice, Setting, User, WheelList
 from mirza.panels.service import PanelService
 

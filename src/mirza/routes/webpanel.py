@@ -15,7 +15,6 @@ from aiohttp import web
 from sqlalchemy import func as sa_func
 from sqlalchemy import select as sa_select
 
-from mirza.config import get_settings
 from mirza.db import get_sessionmaker
 from mirza.models import Admin, Invoice, MarzbanPanel, PaymentReport, Product, User
 
@@ -53,7 +52,7 @@ def require_auth(fn):
 async def login_get(request):
     if request.cookies.get("mirza_session") in _SESSIONS:
         raise web.HTTPFound("/panel/")
-    return _page("Mirza Panel", f"""
+    return _page("Mirza Panel", """
 <h1>Mirza Admin</h1>
 <form method=post class=card>
  <input name=username placeholder=username required>
@@ -208,7 +207,7 @@ async def panels_page(request):
 
 @require_auth
 async def invoices_page(request):
-    from mirza.models import Invoice, Setting
+    from mirza.models import Invoice
     q = request.rel_url.query.get("q", "")
     status = request.rel_url.query.get("status", "")
     session = get_sessionmaker()()
@@ -246,6 +245,7 @@ SETTINGS_GROUPS = [
 
 
 async def settings_page(request):
+    from mirza.models import Setting as _SettingModel
     if request.method == "POST":
         form = await request.post()
         session = get_sessionmaker()()
@@ -253,7 +253,7 @@ async def settings_page(request):
             for key in form.keys():
                 val = str(form[key])
                 import json as _j
-                row = Setting(key=key, value=val, value_json=None)
+                row = _SettingModel(key=key, value=val, value_json=None)
                 try:
                     parsed = _j.loads(val)
                     if isinstance(parsed, (dict, list)):
@@ -265,7 +265,7 @@ async def settings_page(request):
         finally:
             await session.close()
 
-    from mirza.models import PaySetting
+    from mirza.models import PaySetting, Setting
     session = get_sessionmaker()()
     kv: dict[str, str] = {}
     try:

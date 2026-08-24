@@ -62,7 +62,6 @@ async def paycheck(message: Message):
         await session.close()
 
     lines = ["🩺 **gateway health**"]
-    all_ok = True
     for gw, keys in REQUIRED_KEYS.items():
         missing = [k for k in keys if not kv.get(k)]
         if missing:
@@ -87,7 +86,6 @@ async def paycheck(message: Message):
                     # only network errors/timeouts mean broken.
                     lines.append(f"🟢 {gw}: reachable ({resp.status}) {ms}ms")
         except Exception as e:
-            all_ok = False
             lines.append(f"🔴 {gw}: unreachable — {type(e).__name__}")
     await message.answer("\n".join(lines))
 

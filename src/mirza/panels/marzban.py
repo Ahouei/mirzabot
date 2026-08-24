@@ -5,7 +5,6 @@ Token cached 1h like legacy token_panel().
 """
 from __future__ import annotations
 
-import time
 from typing import Any, ClassVar
 
 from mirza.contracts import PanelAdapter, PanelResult, PanelUser

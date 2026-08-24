@@ -19,12 +19,11 @@ from sqlalchemy import update as sa_update
 
 from mirza.config import get_settings
 from mirza.db import get_sessionmaker
-from mirza.models import (Admin, Category, Discount, Invoice, MarzbanPanel,
+from mirza.models import (Category, Discount, Invoice, MarzbanPanel,
                           PaymentReport, Product, Setting, User)
 
 
 def _json(data, status: int = 200) -> web.Response:
-    import json
     return web.json_response({"status": status < 400, "msg": "", **data}
                              if isinstance(data, dict) else data,
                              status=status)

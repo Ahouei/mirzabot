@@ -9,12 +9,10 @@ only validates their keys against the real API.
 """
 from __future__ import annotations
 
-import hashlib
-import hmac as hmac_mod
 import json as _json
-from typing import Any, ClassVar
+from typing import Any
 
-from mirza.contracts import GatewayInit, PaymentGateway
+from mirza.contracts import PaymentGateway
 
 
 class FakeResponse:
@@ -156,7 +154,6 @@ def build_gateway(name: str, kv_overrides: dict | None = None,
 
         class Patched(original_cls):  # type: ignore[valid-type,misc]
             async def create_payment(self, order_id, amount, description):
-                import mirza.payments as pay_pkg
                 import aiohttp
                 real_session = aiohttp.ClientSession
                 aiohttp.ClientSession = (  # monkey-patch scoped to call

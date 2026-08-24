@@ -7,7 +7,6 @@ All admin-gated by the same AdminGate filter as handlers/admin/__init__.
 from __future__ import annotations
 
 import secrets
-import time
 
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
@@ -16,7 +15,7 @@ from sqlalchemy import select as sa_select
 from mirza.config import get_settings
 from mirza.db import get_sessionmaker
 from mirza.models import (Category, Channel, Departman, Discount,
-                          GiftCodeConsumed, Help, MarzbanPanel, User)
+                          GiftCodeConsumed, Help, User)
 
 router = Router(name="admin2")
 
@@ -280,7 +279,6 @@ async def approve_agent(cb: CallbackQuery):
     uid = cb.data.split("#")[1]
     session = get_sessionmaker()()
     try:
-        from mirza.models import AgentRequest
         res = await session.execute(
             sa_select(User).where(User.id == uid))
         u = res.scalar_one_or_none()

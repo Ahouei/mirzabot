@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from mirza.contracts import PanelAdapter, PanelResult, PanelUser
+from mirza.contracts import PanelResult, PanelUser
 from mirza.registry import register_plugin
 from mirza.panels.marzban import MarzbanAdapter
 
