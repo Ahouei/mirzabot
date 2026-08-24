@@ -36,6 +36,11 @@ def build_dispatcher() -> Dispatcher:
     for r in admin_routers():
         dp.include_router(r)
 
+    # Telegram Stars checkout lifecycle (pre_checkout + successful_payment)
+    from mirza.payments.stars import routers as stars_routers
+    for r in stars_routers():
+        dp.include_router(r)
+
     # legacy chat_member handling (channel left/kicked notifications)
     from mirza.handlers.user import ChatMemberHandler
     dp.chat_member.register(ChatMemberHandler)

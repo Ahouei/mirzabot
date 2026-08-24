@@ -28,6 +28,7 @@ Legend: ✅ ported · 🔧 ported+improved · 🆕 new · ⏳ phase-2 slot
 | cronbot/plisio.php | payments/plisio.py + scheduler poll job | ✅ |
 | payment/iranpay1/2.php + cronbot/iranpay1.php | payments/iranpay.py (base URL configurable) + iranpay_poll job | 🔧 |
 | CubePay TRON gateway (late upstream: function.php trnado() + payment/iranpay2.php) | payments/cubepay.py — HMAC-signed callback + authority verify, customer-paid fee (percent/flat), HTML result card | 🔧 unit-tested offline |
+| Telegram Stars (index.php startelegrams + pre_checkout/successful_payment) | payments/stars.py — native aiogram invoice link, legacy stars conversion, replay-guarded settlement | 🔧 |
 | card-to-card (croncard) | payments/card2card.py + croncard job | ✅ |
 | wallet Balance | payments/wallet.py + **append-only balance_ledger** | 🔧 |
 | DirectPayment / claim logic | payments/service.py claim_paid() atomic | 🔧 |
@@ -90,7 +91,6 @@ install.sh (Apache/PHP/MySQL/certbot) → scripts/install.sh (systemd+Caddy auto
 
 ## Phase-2 slots (⏳)
 - Mini App React build refresh against new API (current app/ kept compatible)
-- Telegram Stars / TON native payments addon
 - Multi-owner panel ACLs (admin.rule levels beyond legacy single rule)
 - Redis FSM storage backend for multi-instance deployments
 
