@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import ClassVar
 
 from mirza.contracts import PanelResult, PanelUser
-from mirza.registry import register_plugin
 from mirza.panels.marzban import MarzbanAdapter
+from mirza.registry import register_plugin
 
 
 @register_plugin("panel", "pasarguard", meta={"protocols": "vless,vmess,trojan,ss"})

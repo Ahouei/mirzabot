@@ -56,9 +56,10 @@ class WGDashboardAdapter(PanelAdapter):
     @staticmethod
     def _gen_keys() -> tuple[str, str]:
         try:
-            from cryptography.hazmat.primitives.asymmetric.x25519 import \
-                X25519PrivateKey
             from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric.x25519 import (
+                X25519PrivateKey,
+            )
             priv = X25519PrivateKey.generate()
             priv_b = priv.private_bytes(
                 serialization.Encoding.Raw,

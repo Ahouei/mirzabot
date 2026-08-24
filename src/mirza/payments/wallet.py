@@ -4,7 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, func, select as sa_select
+from sqlalchemy import Column, DateTime, Integer, String, Text, func
+from sqlalchemy import select as sa_select
 
 from mirza.db import Base
 

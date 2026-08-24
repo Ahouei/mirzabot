@@ -7,7 +7,6 @@ from __future__ import annotations
 import time
 
 import aiohttp
-
 from aiogram import F, Router
 from aiogram.types import Message
 from sqlalchemy import select as sa_select

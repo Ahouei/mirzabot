@@ -12,12 +12,11 @@ from __future__ import annotations
 import secrets
 
 from aiogram import F, Router
-from aiogram.types import (
-    CallbackQuery, Message, PreCheckoutQuery, SuccessfulPayment)
+from aiogram.types import CallbackQuery, Message, PreCheckoutQuery, SuccessfulPayment
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.models import PaySetting, PaymentReport, Setting
+from mirza.models import PaymentReport, PaySetting, Setting
 
 router = Router(name="stars")
 

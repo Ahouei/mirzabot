@@ -45,9 +45,10 @@ async def _fetch(url: str, timeout: float = 8.0,
 
 async def _usd_toman() -> int:
     # 1) admin override
-    from mirza.models import Setting
     from sqlalchemy import select as sa_select
+
     from mirza.db import get_sessionmaker
+    from mirza.models import Setting
     raw: str | None = None
     try:
         session = get_sessionmaker()()

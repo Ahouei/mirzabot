@@ -15,8 +15,7 @@ from sqlalchemy import select as sa_select
 
 from mirza.config import get_settings
 from mirza.db import get_sessionmaker
-from mirza.models import (Invoice, MarzbanPanel, PaymentReport, Product,
-                          User)
+from mirza.models import Invoice, MarzbanPanel, PaymentReport, Product, User
 
 router = Router(name="admin")
 
@@ -300,6 +299,7 @@ def _panel_types() -> list[str]:
 def _encrypt_secret(raw: str) -> str:
     import base64
     import hashlib
+
     from cryptography.fernet import Fernet
     key = base64.urlsafe_b64encode(
         hashlib.sha256(get_settings().session_secret.encode()).digest())

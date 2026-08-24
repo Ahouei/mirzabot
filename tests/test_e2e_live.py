@@ -30,6 +30,7 @@ async def live(tmp_path, monkeypatch):
     get_settings.cache_clear()
 
     from aiohttp.test_utils import TestClient, TestServer
+
     from mirza.api import make_app
     client = TestClient(TestServer(make_app()))
     await client.start_server()

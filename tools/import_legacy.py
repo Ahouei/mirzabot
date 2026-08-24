@@ -406,8 +406,9 @@ def commit_import(tables: dict, cols: dict) -> int:
 
     async def run():
         from sqlalchemy import select as sa_select
-        from mirza.db import get_sessionmaker, dispose_engine
+
         import mirza.models as M  # noqa: F401
+        from mirza.db import dispose_engine, get_sessionmaker
 
         session = get_sessionmaker()()
         counts: dict[str, int] = {}

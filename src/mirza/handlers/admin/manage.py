@@ -14,8 +14,15 @@ from sqlalchemy import select as sa_select
 
 from mirza.config import get_settings
 from mirza.db import get_sessionmaker
-from mirza.models import (Category, Channel, Departman, Discount,
-                          GiftCodeConsumed, Help, User)
+from mirza.models import (
+    Category,
+    Channel,
+    Departman,
+    Discount,
+    GiftCodeConsumed,
+    Help,
+    User,
+)
 
 router = Router(name="admin2")
 
@@ -295,6 +302,7 @@ async def approve_agent(cb: CallbackQuery):
 
 def sa_update_agent(uid: str):
     from sqlalchemy import update as sa_update
+
     from mirza.models import AgentRequest
     return sa_update(AgentRequest).where(
         AgentRequest.user_id == uid).values(status="approved")

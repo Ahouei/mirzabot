@@ -6,7 +6,6 @@ from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
-
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker

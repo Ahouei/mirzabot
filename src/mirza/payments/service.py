@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select as sa_select
 from sqlalchemy import update as sa_update
 
-from mirza.models import Invoice, PaySetting, PaymentReport
+from mirza.models import Invoice, PaymentReport, PaySetting
 from mirza.panels.service import PanelService, ProvisionResult
 
 

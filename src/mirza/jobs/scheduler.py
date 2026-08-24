@@ -46,6 +46,7 @@ class _JobContext:
         if self.bot is None:
             return
         from sqlalchemy import select as sa_select
+
         from mirza.models import TopicId
         async with self.session_factory() as s:
             res = await s.execute(
@@ -65,6 +66,7 @@ class _JobContext:
 
 async def _report_chat(session) -> int | None:
     from sqlalchemy import select as sa_select
+
     from mirza.models import Setting
     res = await session.execute(
         sa_select(Setting.value).where(Setting.key == "Channel_Report"))

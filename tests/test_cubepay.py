@@ -10,8 +10,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from mirza.payments.cubepay import (CubePayGateway, _apply_fee,
-                                    payable_amount, result_page)
+from mirza.payments.cubepay import (
+    CubePayGateway,
+    _apply_fee,
+    payable_amount,
+    result_page,
+)
 
 
 def test_fee_math_matches_php():

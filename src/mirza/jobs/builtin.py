@@ -133,6 +133,8 @@ def _register_jobs() -> None:
     @register_plugin("job", "statusday", meta={"cron": "*/15 * * * *"})
     class StatusDayJob(Job):
         async def run(self, ctx: JobContext) -> None:
+            # legacy fired on server-local 23:45; keep local wall clock so the
+            # operator's MIRZA_TIMEZONE (system TZ) governs, matching PHP
             if datetime.now().strftime("%H:%M") != "23:45":
                 return
             async with ctx.session_factory() as s:

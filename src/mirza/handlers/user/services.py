@@ -11,8 +11,8 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.models import Invoice, MarzbanPanel, ServiceOther
 from mirza.i18n import t as _t
+from mirza.models import Invoice, MarzbanPanel, ServiceOther
 from mirza.panels.service import PanelService
 
 router = Router(name="services")
@@ -145,6 +145,7 @@ async def change_loc_start(cb: CallbackQuery, db_user=None):
             await cb.answer("not found", show_alert=True)
             return
         from sqlalchemy import select as _s
+
         from mirza.models import MarzbanPanel
         panels = list((await session.execute(
             _s(MarzbanPanel.name_panel, MarzbanPanel.price_change_loc)

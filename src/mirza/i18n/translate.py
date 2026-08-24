@@ -6,12 +6,11 @@ additions table. Missing keys fall back to English, then to the key itself.
 """
 from __future__ import annotations
 
-from .fa_full import STRINGS as _FA_LEGACY
+from .additions import STRINGS as ADDITIONS
 from .en_full import STRINGS as _EN_LEGACY
+from .fa_full import STRINGS as _FA_LEGACY
 from .ru_full import STRINGS as _RU_LEGACY
 from .zh_full import STRINGS as _ZH_LEGACY
-
-from .additions import STRINGS as ADDITIONS
 
 LANGS: dict[str, dict] = {
     "fa": _FA_LEGACY,

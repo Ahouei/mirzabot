@@ -64,6 +64,7 @@ async def run_backup(ctx) -> None:
 
 async def _backup_chat(ctx) -> int | None:
     from sqlalchemy import select as sa_select
+
     from mirza.models import Setting
     async with ctx.session_factory() as s:
         res = await s.execute(

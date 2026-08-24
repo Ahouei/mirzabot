@@ -5,11 +5,11 @@ from aiogram import Router
 
 
 def routers() -> list[Router]:
-    from .menu import router as menu_router
     from .buy import router as buy_router
-    from .services import router as services_router
-    from .misc import router as misc_router
     from .extra import router as extra_router
+    from .menu import router as menu_router
+    from .misc import router as misc_router
+    from .services import router as services_router
     return [menu_router, buy_router, services_router, misc_router, extra_router]
 
 

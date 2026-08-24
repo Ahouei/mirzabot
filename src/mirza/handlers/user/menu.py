@@ -14,6 +14,7 @@ router = Router(name="menu")
 
 def _main_keyboard(lang: str):
     from aiogram.utils.keyboard import ReplyKeyboardBuilder
+
     from mirza.i18n import t as _t
     # legacy corpus keys (admin-editable) resolved via alias map
     labels = {name: _t(f"users.mainMenu.{name}", lang)

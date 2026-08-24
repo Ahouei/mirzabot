@@ -23,7 +23,7 @@ def test_registry_plugins_load():
 
 
 def test_i18n_fallbacks():
-    from mirza.i18n import t, LANGS
+    from mirza.i18n import LANGS, t
     # full legacy corpora loaded (2,381 leaves + additions merged)
     for lang, table in LANGS.items():
         assert len(table) >= 9   # top sections from legacy corpus

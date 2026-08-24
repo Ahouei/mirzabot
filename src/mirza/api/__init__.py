@@ -12,15 +12,22 @@ import time
 from pathlib import Path
 
 from aiohttp import web
-
 from sqlalchemy import func as sa_func
 from sqlalchemy import select as sa_select
 from sqlalchemy import update as sa_update
 
 from mirza.config import get_settings
 from mirza.db import get_sessionmaker
-from mirza.models import (Category, Discount, Invoice, MarzbanPanel,
-                          PaymentReport, Product, Setting, User)
+from mirza.models import (
+    Category,
+    Discount,
+    Invoice,
+    MarzbanPanel,
+    PaymentReport,
+    Product,
+    Setting,
+    User,
+)
 
 
 def _json(data, status: int = 200) -> web.Response:
@@ -330,8 +337,14 @@ def make_app() -> web.Application:
     app.router.add_post("/api/verify", verify_user)
 
     # payment gateway callbacks (webhook replacements of pay/*.php)
-    from .payhooks import plisio_callback, nowpayment_callback, \
-        zarinpal_callback, aqaye_callback, iranpay_callback, cubepay_callback
+    from .payhooks import (
+        aqaye_callback,
+        cubepay_callback,
+        iranpay_callback,
+        nowpayment_callback,
+        plisio_callback,
+        zarinpal_callback,
+    )
     app.router.add_post("/pay/plisio/callback", plisio_callback)
     app.router.add_post("/pay/nowpayment/callback", nowpayment_callback)
     app.router.add_get("/pay/zarinpal/callback", zarinpal_callback)

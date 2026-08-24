@@ -52,8 +52,8 @@ async def _report(s, kind: str, text: str) -> None:
 async def settle_tuple(request_body: bytes, query: dict[str, str],
                        gateway_name: str, kv_extra: list[str]) -> tuple[bool, str]:
     """Verify + idempotent settle; returns (paid, order_id)."""
-    from mirza.registry import registry
     from mirza.payments.service import PaymentService
+    from mirza.registry import registry
     session = get_sessionmaker()()
     try:
         svc = PaymentService(session)
@@ -83,8 +83,8 @@ async def settle_tuple(request_body: bytes, query: dict[str, str],
 
 async def settle(request_body: bytes, query: dict[str, str],
                  gateway_name: str, kv_extra: list[str]) -> web.Response:
-    from mirza.registry import registry
     from mirza.payments.service import PaymentService
+    from mirza.registry import registry
     session = get_sessionmaker()()
     try:
         svc = PaymentService(session)
@@ -151,8 +151,9 @@ async def iranpay_callback(request: web.Request) -> web.Response:
 async def cubepay_callback(request: web.Request) -> web.Response:
     """CubePay: POST = signed gateway callback (JSON ack), GET = browser
     redirect -> customer-facing HTML result card (legacy cubepay_emit)."""
-    from mirza.payments.cubepay import result_page
     import json as _json
+
+    from mirza.payments.cubepay import result_page
 
     is_browser = (request.method == "GET"
                   and "text/html" in request.headers.get("Accept", "").lower())

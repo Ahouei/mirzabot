@@ -12,8 +12,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.models import (Help, MarzbanPanel, Product,
-                          Setting, SupportMessage)
+from mirza.models import Help, MarzbanPanel, Product, Setting, SupportMessage
 
 router = Router(name="user2")
 

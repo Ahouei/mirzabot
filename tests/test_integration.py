@@ -49,8 +49,9 @@ async def db(tmp_path, monkeypatch):
 
 async def test_schema_roundtrip(db):
     from sqlalchemy import select as sa_select
+
     from mirza.db import get_sessionmaker
-    from mirza.models import User, Product, Invoice
+    from mirza.models import Invoice, Product, User
 
     session = get_sessionmaker()()
     session.add(User(id="100", username="tester", balance=500_000))

@@ -25,14 +25,15 @@ def build_dispatcher() -> Dispatcher:
 
     # routers are module-level singletons; aiogram forbids attaching one
     # Router to two Dispatchers, so clone fresh instances per build.
+    from mirza.handlers.admin import routers as admin_routers
     from mirza.handlers.middleware import AuthMiddleware, I18nMiddleware
     from mirza.handlers.user import routers as user_routers
-    from mirza.handlers.admin import routers as admin_routers
 
     def _fresh(routers_list):
         out = []
-        from aiogram import Router as _Router
         import copy
+
+        from aiogram import Router as _Router
         for r in routers_list:
             clone = _Router(name=r.name + f"#{id(dp)%100000}")
             # deep-copy observer state (handlers+filters+middlewares)

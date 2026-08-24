@@ -272,6 +272,7 @@ def _decrypt_secret(stored: str) -> str:
     try:
         import base64
         import hashlib
+
         from cryptography.fernet import Fernet
         key = base64.urlsafe_b64encode(hashlib.sha256(key_source).digest())
         return Fernet(key).decrypt(stored.encode()).decode()
