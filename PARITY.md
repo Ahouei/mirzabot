@@ -1,0 +1,94 @@
+# Parity matrix — PHP mirzabot 0.3.2 → Python rewrite
+
+Legend: ✅ ported · 🔧 ported+improved · 🆕 new · ⏳ phase-2 slot
+
+## Panels (legacy file → registry name)
+| Legacy | Rewrite | Status |
+|---|---|---|
+| Marzban.php (462) | panels/marzban.py + nodes API | ✅ |
+| marzneshin.php | panels/marzneshin.py | ✅ |
+| alireza_single.php | panels/alireza_single.py | ✅ |
+| x-ui_single.php | panels/xui_single.py | ✅ |
+| s_ui.php | panels/sui.py | ✅ |
+| hiddify.php | panels/hiddify.py (+serverstatus) | ✅ |
+| WGDashboard.php | panels/wgdashboard.py (keygen incl.) | ✅ |
+| mikrotik.php | panels/mikrotik.py (REST v7, ppp/hotspot) | ✅ |
+| ibsng.php + Modules/IBSng.php | panels/ibsng.py | ✅ |
+| Rebecca.php | panels/rebecca.py | ✅ |
+| pasarguard alias | panels/pasarguard.py (own registry entry) | 🔧 |
+| mirza_agent.php | panels/mirza_agent.py (+list_agent_panels) | ✅ |
+| panels.php ManagePanel (2554) | panels/service.py PanelService | 🔧 |
+
+## Payments
+| Legacy | Rewrite | Status |
+|---|---|---|
+| payment/zarinpal.php | payments/zarinpal.py (PG v4, 100/101 idempotent) | ✅ |
+| payment/aqayepardakht.php | payments/aqayepardakht.py (code 70 replay-safe) | ✅ |
+| payment/nowpayment.php + cronbot/plisio.php polling | payments/nowpayments.py + jobs plisio | ✅ |
+| cronbot/plisio.php | payments/plisio.py + scheduler poll job | ✅ |
+| payment/iranpay1/2.php + cronbot/iranpay1.php | payments/iranpay.py (base URL configurable) + iranpay_poll job | 🔧 |
+| card-to-card (croncard) | payments/card2card.py + croncard job | ✅ |
+| wallet Balance | payments/wallet.py + **append-only balance_ledger** | 🔧 |
+| DirectPayment / claim logic | payments/service.py claim_paid() atomic | 🔧 |
+
+## Scheduler (cronbot/*.php)
+statusday→statusday · NoticationsService→notifications(+volumewarn split) ·
+disableconfig→disableconfig · activeconfig→activeconfig · payment_expire→payment_expire ·
+sendmessage→sendmessage(batched 30/min) · gift→gift · expireagent→expireagent ·
+on_hold→on_hold · configtest→configtest · uptime_node→uptime_node · uptime_panel→uptime_panel ·
+backupbot→backupbot(pg_dump/mysqldump/sqlite auto) · croncard→croncard ·
+plisio→plisio · iranpay1→iranpay_poll (**fixes legacy return-inside-while bug**) — all ✅,
+toggleable via setting.status_cron JSON like legacy.
+
+## Bot surface
+| Feature | Where | Status |
+|---|---|---|
+| start/menu/lang switch/deep-link ref | handlers/user/menu.py | ✅ |
+| forced channel join + rejoin notices | middleware + ChatMemberHandler | ✅ |
+| ban/block enforcement | AuthMiddleware | ✅ |
+| buy: category→product→confirm→discount→gateway pick | handlers/user/buy.py | ✅ |
+| wallet pay path | buy.pay_wallet | ✅ |
+| my services + config view | services.my_services | ✅ |
+| extend / extra volume / extra time | services numeric-input FSM-light | ✅ |
+| change location (paid migration) | services.change_loc* | ✅ |
+| revoke sub link | services.revoke | ✅ |
+| trial accounts (usertest) | misc.free_trial | ✅ |
+| lucky wheel (daily, prize to ledger) | misc.lucky_wheel | 🔧 |
+| referrals (link, count) | misc.affiliates | ✅ |
+| support contact | misc.support | ✅ |
+| broadcast queue (admin) | admin.broadcast_* | ✅ |
+| stats/finduser/block/products/panels CRUD | admin/* | ✅ |
+| manual sell (/sell) | admin.manual_sell | ✅ |
+| payments report (/payments) | admin.payments_report | ✅ |
+| i18n fa/en/ru/zh | i18n/ | ✅ |
+
+## HTTP surfaces
+| Legacy | Rewrite | Status |
+|---|---|---|
+| api/*.php (miniapp, users, product, payment, settings, discount, invoice, log, statbot, verify, keyboard) | api/__init__.py token-or-session auth | ✅ |
+| pay callbacks | api/payhooks.py (idempotent settle) | 🔧 |
+| sub/index.php | api/subproxy.py | 🔧 |
+| index.php webhook | api/webhook.py — **validates secret_token (legacy gap fixed)** | 🔧 |
+| panel/*.php web admin | routes/webpanel.py (bcrypt12, session regen, warm dark theme) | ✅ core pages |
+| vpnbot/index.php white-label | api/whitelabel.py per-child dispatchers | ✅ |
+
+## Installer
+install.sh (Apache/PHP/MySQL/certbot) → scripts/install.sh (systemd+Caddy auto-HTTPS,
+.env, alembic upgrade, setWebhook with secret) — ✅
+
+## New in the rewrite (🆕)
+- Append-only **balance ledger** (auditable wallet)
+- **Webhook secret validation** on all entrypoints
+- **Fernet encryption** for panel passwords at rest
+- Plugin **revision history** in registry; runtime enable/disable
+- Atomic payment claiming (`UPDATE ... WHERE status='Unpaid'` guard)
+- Batched broadcast delivery + payment-poll caps (rate-limit friendly)
+- JSONB settings KV replacing 70-flat-column setting row
+- Real FKs + indexes on invoice/payment hot paths
+- `/api` machine tokens via hash.txt preserved + admin-session dual auth
+
+## Phase-2 slots (⏳)
+- Mini App React build refresh against new API (current app/ kept compatible)
+- Telegram Stars / TON native payments addon
+- Multi-owner panel ACLs (admin.rule levels beyond legacy single rule)
+- Redis FSM storage backend for multi-instance deployments

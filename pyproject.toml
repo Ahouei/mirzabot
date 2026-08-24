@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mirza"
+version = "1.0.0"
+description = "Mirza Bot - Telegram VPN sales & management platform (Python rewrite of mirzabot)"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-or-later" }
+dependencies = [
+  "aiogram==3.*",
+  "SQLAlchemy[asyncio]==2.*",
+  "alembic",
+  "asyncpg",
+  "aiomysql",
+  "APScheduler==3.*",
+  "aiohttp",
+  "pydantic==2.*",
+  "pydantic-settings",
+  "cryptography",
+  "python-dotenv",
+  "orjson",
+  "qr-code-gen @ git+https://github.com/lincolnloop/python-qrcode.git",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
