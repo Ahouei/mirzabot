@@ -19,6 +19,11 @@ class MarzbanAdapter(PanelAdapter):
     name: ClassVar[str] = "marzban"
 
     def __init__(self, creds: dict[str, Any]):
+        # accept both the service-layer key (password_panel_encrypted, already
+        # decrypted by PanelService) and raw password_panel from monitors
+        creds = dict(creds)
+        creds.setdefault("password_panel",
+                         creds.pop("password_panel_encrypted", ""))
         super().__init__(creds)
         self.client = Client(creds["url_panel"])
 

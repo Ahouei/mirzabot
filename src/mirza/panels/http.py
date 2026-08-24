@@ -43,8 +43,9 @@ class Client:
                                 headers=headers, cookies=cookies) as resp:
             body = await resp.text()
             status = resp.status
+        parsed: Any
         try:
-            import orjson as _json
+            import json as _json
             parsed = _json.loads(body)
         except Exception:
             parsed = body
