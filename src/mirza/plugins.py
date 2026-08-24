@@ -20,6 +20,7 @@ IMPORTS = [
     "mirza.payments.plisio",
     "mirza.payments.iranpay",
     "mirza.payments.card2card",
+    "mirza.payments.cubepay",
     "mirza.jobs.builtin",
 ]
 

@@ -27,6 +27,7 @@ Legend: ✅ ported · 🔧 ported+improved · 🆕 new · ⏳ phase-2 slot
 | payment/nowpayment.php + cronbot/plisio.php polling | payments/nowpayments.py + jobs plisio | ✅ |
 | cronbot/plisio.php | payments/plisio.py + scheduler poll job | ✅ |
 | payment/iranpay1/2.php + cronbot/iranpay1.php | payments/iranpay.py (base URL configurable) + iranpay_poll job | 🔧 |
+| CubePay TRON gateway (late upstream: function.php trnado() + payment/iranpay2.php) | payments/cubepay.py — HMAC-signed callback + authority verify, customer-paid fee (percent/flat), HTML result card | 🔧 unit-tested offline |
 | card-to-card (croncard) | payments/card2card.py + croncard job | ✅ |
 | wallet Balance | payments/wallet.py + **append-only balance_ledger** | 🔧 |
 | DirectPayment / claim logic | payments/service.py claim_paid() atomic | 🔧 |

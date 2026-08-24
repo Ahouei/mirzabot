@@ -329,12 +329,15 @@ def make_app() -> web.Application:
 
     # payment gateway callbacks (webhook replacements of pay/*.php)
     from .payhooks import plisio_callback, nowpayment_callback, \
-        zarinpal_callback, aqaye_callback, iranpay_callback
+        zarinpal_callback, aqaye_callback, iranpay_callback, cubepay_callback
     app.router.add_post("/pay/plisio/callback", plisio_callback)
     app.router.add_post("/pay/nowpayment/callback", nowpayment_callback)
     app.router.add_get("/pay/zarinpal/callback", zarinpal_callback)
     app.router.add_get("/pay/aqayepardakht/callback", aqaye_callback)
     app.router.add_get("/pay/iranpay/callback", iranpay_callback)
+    # CubePay: POST from gateway (signed), GET browser redirect (HTML card)
+    app.router.add_post("/pay/cubepay/callback", cubepay_callback)
+    app.router.add_get("/pay/cubepay/callback", cubepay_callback)
 
     # subscription proxy (sub/index.php parity)
     from .subproxy import sub_handler
