@@ -13,13 +13,13 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mirza.db import Base
+from mirza.db.base import PortableJSON
 
-# Some columns must stay portable (SQLite dev) - use JSON-on-VARCHAR there.
-JSONType = JSONB().with_variant(String(), "sqlite")
+# Portable JSON: JSONB on postgres, serialized TEXT on sqlite (tests/dev).
+JSONType = PortableJSON()
 
 
 class User(Base):
