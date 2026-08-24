@@ -313,8 +313,11 @@ def make_app() -> web.Application:
     app = web.Application()
     r = web.Application()  # placeholder to keep linters calm
     del r
+    # legacy miniapp action API + token exchange + static bundle
+    from .miniapp import miniapp, token_exchange
     app.router.add_get("/api/miniapp", miniapp)
     app.router.add_post("/api/miniapp", miniapp)
+    app.router.add_post("/api/miniapp/token", token_exchange)
     app.router.add_get("/api/users", users)
     app.router.add_get("/api/product", products)
     app.router.add_get("/api/panels", panels)
@@ -342,6 +345,11 @@ def make_app() -> web.Application:
     # subscription proxy (sub/index.php parity)
     from .subproxy import sub_handler
     app.router.add_get("/sub/{token}", sub_handler)
+
+    # legacy miniapp bundle (React build) served from /app if present
+    from .miniapp_static import serve_miniapp
+    app.router.add_get("/app/", serve_miniapp)
+    app.router.add_get("/app/{tail:.*}", serve_miniapp)
 
     # webhook endpoint (index.php parity, with secret check)
     from .webhook import webhook_handler

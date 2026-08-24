@@ -17,9 +17,13 @@ async def sub_handler(request: web.Request) -> web.Response:
     token = html.escape(request.match_info.get("token", ""), quote=True)
     session = get_sessionmaker()()
     try:
-        res = await session.execute(
-            sa_select(Invoice).where(Invoice.id_invoice == token))
-        inv = res.scalar_one_or_none()
+        try:
+            res = await session.execute(
+                sa_select(Invoice).where(Invoice.id_invoice == token))
+            inv = res.scalar_one_or_none()
+        except Exception:
+            # unmigrated/absent DB: no invoices can exist
+            inv = None
     finally:
         await session.close()
     if inv is None:

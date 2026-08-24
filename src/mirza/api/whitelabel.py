@@ -24,10 +24,13 @@ async def _child_dispatcher(bot_token: str, row: Botsaz):
     key = bot_token[-12:]
     if key in _child_dps:
         return _child_dps[key]
-    from aiogram import Bot, Dispatcher
+    from aiogram import Dispatcher
     from aiogram.fsm.storage.memory import MemoryStorage
+
+    from mirza.whitelabel.shop import router as shop_router
     dp = Dispatcher(storage=MemoryStorage())
     dp["child_row"] = row
+    dp.include_router(shop_router)
     _child_dps[key] = dp
     return dp
 

@@ -22,7 +22,12 @@ async def webhook_handler(request: web.Request) -> web.Response:
     except Exception:
         return web.Response(status=400)
 
-    # main bot update
+    # main bot update; a misconfigured/empty token or downstream DB error
+    # must not 500 the webhook (Telegram retries forever on non-2xx)
     from mirza.bot import process_update
-    await process_update(settings.api_key, secret, payload)
+    try:
+        await process_update(settings.api_key, secret, payload)
+    except Exception:
+        log.exception("webhook update processing failed")
+        return web.Response(text="OK")   # ack to stop retry storm
     return web.Response(text="OK")
