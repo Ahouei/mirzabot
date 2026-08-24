@@ -92,3 +92,10 @@ install.sh (Apache/PHP/MySQL/certbot) → scripts/install.sh (systemd+Caddy auto
 - Telegram Stars / TON native payments addon
 - Multi-owner panel ACLs (admin.rule levels beyond legacy single rule)
 - Redis FSM storage backend for multi-instance deployments
+
+## i18n corpora
+- Full legacy `lang/{fa,en,ru,zh}.php` converted: **2,381 strings × 4 languages**
+  → `src/mirza/i18n/{fa,en,ru,zh}_full.py` (regenerate:
+  `python scripts/convert_legacy_langs.py`)
+- Rewrite-only strings live in `i18n/additions.py`; `i18n/aliases.py` binds
+  rewrite keys to admin-editable legacy keys (bottext UI keeps working)

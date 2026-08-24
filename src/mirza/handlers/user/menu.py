@@ -16,16 +16,19 @@ router = Router(name="menu")
 def _main_keyboard(lang: str):
     from aiogram.utils.keyboard import ReplyKeyboardBuilder
     from mirza.i18n import t as _t
-    labels = _t("users.mainMenu", lang)
-    if not isinstance(labels, dict):
-        labels = {}
+    # legacy corpus keys (admin-editable) resolved via alias map
+    labels = {name: _t(f"users.mainMenu.{name}", lang)
+              for name in ("text_sell", "text_extend", "usertest",
+                           "wheelLuck", "purchasedServices",
+                           "accountwallet", "affiliates",
+                           "tariff", "support", "help")}
     kb = ReplyKeyboardBuilder()
     texts = [
         labels.get("text_sell"), labels.get("text_extend"),
-        labels.get("text_usertest"), labels.get("text_wheel_luck"),
-        labels.get("text_Purchased_services"), labels.get("accountwallet"),
-        labels.get("text_affiliates"), labels.get("text_Tariff_list"),
-        labels.get("text_support"), labels.get("text_help"),
+        labels.get("usertest"), labels.get("wheelLuck"),
+        labels.get("purchasedServices"), labels.get("accountwallet"),
+        labels.get("affiliates"), labels.get("tariff"),
+        labels.get("support"), labels.get("help"),
     ]
     for txt in texts:
         if txt:

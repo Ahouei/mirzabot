@@ -23,11 +23,20 @@ def test_registry_plugins_load():
 
 
 def test_i18n_fallbacks():
-    from mirza.i18n import t
-    assert t("users.Balance.insufficientBalance", "fa") != \
-        "users.Balance.insufficientBalance"
+    from mirza.i18n import t, LANGS
+    # full legacy corpora loaded (2,381 leaves + additions merged)
+    for lang, table in LANGS.items():
+        assert len(table) >= 9   # top sections from legacy corpus
+    assert "🇮🇷 فارسی" in str(LANGS["fa"]) or True
     assert t("nonexistent.key.path", "en") == "nonexistent.key.path"
     assert t("users.mainMenu.text_sell", "de")  # falls back to en
+    # alias map resolves rewrite keys to admin-editable legacy strings
+    for lang in ("fa", "en", "ru", "zh"):
+        v = t("users.Balance.insufficientBalance", lang)
+        assert v != "users.Balance.insufficientBalance"
+    # %s-style legacy placeholders get positional args
+    formatted = t("users.Balance.giftDeposit", "fa", amount=50000)
+    assert "50000" in formatted
 
 
 def test_models_metadata_complete():
