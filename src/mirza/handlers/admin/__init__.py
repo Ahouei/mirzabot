@@ -308,4 +308,5 @@ def _encrypt_secret(raw: str) -> str:
 
 def routers() -> list[Router]:
     from .manage import router as manage_router
-    return [router, manage_router]
+    from .paycheck import router as paycheck_router
+    return [router, manage_router, paycheck_router]

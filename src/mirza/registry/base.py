@@ -66,10 +66,16 @@ class Registry:
 
     # ── resolution ──────────────────────────────────────────────
     def get(self, kind: str, name: str):
+        """Return the registered class/factory itself (NOT instantiated).
+
+        Callers pass their own constructor args, e.g.
+            registry.get("payment", "zarinpal")(kv, callback_base)
+            registry.get("panel", "marzban")(creds)
+        """
         entry = self._plugins.get((kind, name))
         if entry is None or not entry.enabled:
             raise KeyError(f"plugin not found: {kind}/{name}")
-        return entry.factory()
+        return entry.factory
 
     def has(self, kind: str, name: str) -> bool:
         entry = self._plugins.get((kind, name))
