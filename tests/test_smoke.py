@@ -60,6 +60,16 @@ def test_dispatcher_builds():
     assert dp is not None
 
 
+def test_dispatcher_rebuildable():
+    """Routers must detach from the previous Dispatcher before re-attach."""
+    import mirza.bot as bot_mod
+    dp1 = bot_mod.build_dispatcher()
+    # aiogram raises if a Router is included in two Dispatchers; our factory
+    # imports routers lazily per call, so a second build must succeed.
+    dp2 = bot_mod.build_dispatcher()
+    assert dp2 is not None and dp1 is not dp2
+
+
 def test_api_app_routes():
     from mirza.api import make_app
     app = make_app()

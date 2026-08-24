@@ -9,7 +9,8 @@ def routers() -> list[Router]:
     from .buy import router as buy_router
     from .services import router as services_router
     from .misc import router as misc_router
-    return [menu_router, buy_router, services_router, misc_router]
+    from .extra import router as extra_router
+    return [menu_router, buy_router, services_router, misc_router, extra_router]
 
 
 async def ChatMemberHandler(event, bot=None) -> None:

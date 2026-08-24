@@ -55,13 +55,25 @@ toggleable via setting.status_cron JSON like legacy.
 | change location (paid migration) | services.change_loc* | ✅ |
 | revoke sub link | services.revoke | ✅ |
 | trial accounts (usertest) | misc.free_trial | ✅ |
-| lucky wheel (daily, prize to ledger) | misc.lucky_wheel | 🔧 |
+| lucky wheel (daily, prize to ledger) | misc.lucky_wheel + admin /wheelprizes | 🔧 |
 | referrals (link, count) | misc.affiliates | ✅ |
+| support tickets via departments | user/extra.py ticket_* + Departman table | ✅ |
+| tariff list | extra.tariff_list (grouped by location) | ✅ |
+| tutorial browsing in help | menu help + extra.help_browse/uhelp | ✅ |
+| custom volume/time pricing | api miniapp custom_price + panel cols | ✅ |
 | support contact | misc.support | ✅ |
 | broadcast queue (admin) | admin.broadcast_* | ✅ |
 | stats/finduser/block/products/panels CRUD | admin/* | ✅ |
 | manual sell (/sell) | admin.manual_sell | ✅ |
 | payments report (/payments) | admin.payments_report | ✅ |
+| gift/discount codes CRUD (/giftcode, /giftcodes) | admin/manage.py | ✅ |
+| categories CRUD (/addcat /cats) | admin/manage.py | ✅ |
+| tutorials CRUD (/addhelp /helplist) | admin/manage.py | ✅ |
+| channels register + mandatory lock (/addchannel /lockchannel) | admin/manage.py | ✅ |
+| agent grant/revoke/list/requests (/makeagent /agents …) | admin/manage.py | ✅ |
+| departments (/adddept /depts) | admin/manage.py | ✅ |
+| balance adjust with ledger (/addbalance) | admin/manage.py | ✅ |
+| wheel prize config (/wheelprizes) | admin/manage.py | ✅ |
 | i18n fa/en/ru/zh | i18n/ | ✅ |
 
 ## HTTP surfaces

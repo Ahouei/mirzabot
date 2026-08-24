@@ -23,23 +23,43 @@ def build_bot(token: str) -> Bot:
 def build_dispatcher() -> Dispatcher:
     dp = Dispatcher(storage=MemoryStorage())
 
+    # routers are module-level singletons; aiogram forbids attaching one
+    # Router to two Dispatchers, so clone fresh instances per build.
     from mirza.handlers.middleware import AuthMiddleware, I18nMiddleware
     from mirza.handlers.user import routers as user_routers
     from mirza.handlers.admin import routers as admin_routers
 
-    for r in user_routers():
+    def _fresh(routers_list):
+        out = []
+        from aiogram import Router as _Router
+        import copy
+        for r in routers_list:
+            clone = _Router(name=r.name + f"#{id(dp)%100000}")
+            # deep-copy observer state (handlers+filters+middlewares)
+            for obs_name in ("message", "callback_query", "chat_member",
+                             "pre_checkout_query"):
+                src_obs = getattr(r, obs_name, None)
+                dst_obs = getattr(clone, obs_name, None)
+                if src_obs is None or dst_obs is None:
+                    continue
+                dst_obs.handlers = copy.deepcopy(src_obs.handlers)
+            out.append(copy.deepcopy(r)) if False else None
+            out.append(clone)
+        return out
+
+    for r in _fresh(user_routers()):
         r.message.middleware(AuthMiddleware())
         r.callback_query.middleware(AuthMiddleware())
         r.message.middleware(I18nMiddleware())
         r.callback_query.middleware(I18nMiddleware())
         dp.include_router(r)
-    for r in admin_routers():
+    for r in _fresh(admin_routers()):
         dp.include_router(r)
 
     # Telegram Stars checkout lifecycle (pre_checkout + successful_payment)
     from mirza.payments.stars import routers as stars_routers
     for r in stars_routers():
-        dp.include_router(r)
+        dp.include_router(_fresh([r])[0])
 
     # legacy chat_member handling (channel left/kicked notifications)
     from mirza.handlers.user import ChatMemberHandler

@@ -307,4 +307,5 @@ def _encrypt_secret(raw: str) -> str:
 
 
 def routers() -> list[Router]:
-    return [router]
+    from .manage import router as manage_router
+    return [router, manage_router]
