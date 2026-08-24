@@ -38,14 +38,16 @@ uv venv .venv && uv pip install --python .venv/bin/python .
 cp .env.example .env    # fill MIRZA_API_KEY, MIRZA_ADMIN_NUMBER, ...
 .venv/bin/alembic upgrade head
 .venv/bin/python -m mirza.server          # prod (webhook + scheduler)
-.venv/bin/python -m mirza.bot             # dev polling alternative:
-                                          #   asyncio.run(run_polling(token))
 ```
+
+The upstream Mini App React bundle is served at `/app/` — it lives in this
+branch (`app/`, `index.php` converted to `index.html`) and talks to the new
+backend through the legacy-compatible action API (`/api/miniapp`).
 
 Dev/tests:
 
 ```bash
-.venv/bin/pytest tests/ -q
+.venv/bin/pytest tests/ -q     # 20 tests: unit, integration, live-server e2e
 ```
 
 See `PARITY.md` for the feature-by-feature mapping to the legacy PHP.

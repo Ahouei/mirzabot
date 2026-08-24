@@ -90,7 +90,7 @@ install.sh (Apache/PHP/MySQL/certbot) → scripts/install.sh (systemd+Caddy auto
 - `/api` machine tokens via hash.txt preserved + admin-session dual auth
 
 ## Phase-2 slots (⏳)
-- Mini App React build refresh against new API (current app/ kept compatible)
+- Live panel certification: run each adapter against a real panel instance
 - Multi-owner panel ACLs (admin.rule levels beyond legacy single rule)
 - Redis FSM storage backend for multi-instance deployments
 
@@ -100,3 +100,12 @@ install.sh (Apache/PHP/MySQL/certbot) → scripts/install.sh (systemd+Caddy auto
   `python scripts/convert_legacy_langs.py`)
 - Rewrite-only strings live in `i18n/additions.py`; `i18n/aliases.py` binds
   rewrite keys to admin-editable legacy keys (bottext UI keeps working)
+
+## Verification status
+| Layer | Proof |
+|---|---|
+| Unit/smoke | 16 pytest cases (registry, i18n, models, dispatcher, API, CubePay HMAC, Stars math) |
+| Integration | real SQLite file DB: alembic up/down + ORM round-trips + wallet ledger + claim idempotency + fake-adapter PanelService |
+| E2E live server | booted aiohttp app: miniapp token→actions flow, sub proxy, web-panel login gate, webhook secret gate, static Mini App bundle |
+| Rates | live-verified USD/TRX fetch (TGJU+diaadata) on build host |
+
