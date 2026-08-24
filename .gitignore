@@ -7,3 +7,4 @@ error_log*
 *.sql
 *.zip
 .pytest_cache/
+.i18n_dump/
