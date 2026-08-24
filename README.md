@@ -50,4 +50,6 @@ Dev/tests:
 .venv/bin/pytest tests/ -q     # 20 tests: unit, integration, live-server e2e
 ```
 
-See `PARITY.md` for the feature-by-feature mapping to the legacy PHP.
+See `PARITY.md` for the feature-by-feature mapping to the legacy PHP and
+`docs/CONFIGURATION.md` for the full operator configuration guide
+(env layer vs runtime DB settings).
