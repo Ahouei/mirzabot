@@ -139,6 +139,20 @@ async def _first_test_panel() -> str | None:
 WHEEL_PRIZES = [0, 5_000, 10_000, 20_000, 50_000]
 
 
+async def _wheel_prizes(session) -> list[int]:
+    """Admin-configured prizes (setting wheel_prizes), else defaults."""
+    res = await session.execute(
+        sa_select(Setting.value).where(Setting.key == "wheel_prizes"))
+    raw = res.scalar_one_or_none()
+    if not raw:
+        return WHEEL_PRIZES
+    try:
+        prizes = [int(x) for x in str(raw).split(",") if x.strip()]
+        return prizes or WHEEL_PRIZES
+    except ValueError:
+        return WHEEL_PRIZES
+
+
 @router.message(F.text.regexp(r"(?i)(🎡|گردونه|wheel)"))
 async def lucky_wheel(message: Message, db_user=None):
     uid = str(db_user.id)
@@ -151,7 +165,7 @@ async def lucky_wheel(message: Message, db_user=None):
         if any(s.spun_at == today for s in spins):
             await message.answer("🎡 come back tomorrow!")
             return
-        prize = secrets.choice(WHEEL_PRIZES)
+        prize = secrets.choice(await _wheel_prizes(session))
         session.add(WheelList(user_id=uid, spun_at=today,
                               first_name=message.from_user.first_name,
                               wheel_code=secrets.token_hex(4), prize=prize))

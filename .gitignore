@@ -8,3 +8,4 @@ error_log*
 *.zip
 .pytest_cache/
 .i18n_dump/
+tests/_money.db

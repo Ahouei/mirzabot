@@ -242,9 +242,19 @@ class PanelService:
     async def change_location(self, old_panel: str, new_panel: str,
                               username: str, product_code: str,
                               user_id: str = "") -> ProvisionResult:
-        """Legacy changeloc: create on new panel, remove from old."""
+        """Legacy changeloc: carry remaining volume/time to the new panel,
+        then remove the old config. Never creates a dead empty config."""
+        u = await self.data_user(old_panel, username)
+        if u is None:
+            return ProvisionResult(ok=False,
+                                   error="config not found on source panel")
+        now = _now()
+        remaining_bytes = max((u.data_limit or 0) - (u.used_traffic or 0), 0)
+        remaining_days = max(((u.expire_at or now) - now + 86399) // 86400, 1)
         created = await self.create_user(
-            new_panel, product_code, username, data_limit=0, expire_ts=_now(),
+            new_panel, product_code, username,
+            data_limit=remaining_bytes,
+            expire_ts=now + int(remaining_days) * 86400,
             user_id=user_id, kind="changeloc")
         if not created.ok:
             return created

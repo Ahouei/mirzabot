@@ -85,6 +85,7 @@ def _register_jobs() -> None:
                                                        inv.uuid or "", False)
                             inv.status = "disabled"
                             log.info("disabled %s", inv.id_invoice)
+                await s.commit()   # persist the status sweep (H4)
 
     # ── re-enable / renew configs (activeconfig) ─────────────────
     @register_plugin("job", "activeconfig", meta={"cron": "*/1 * * * *"})
@@ -348,10 +349,12 @@ def _register_jobs() -> None:
                 res = await s.execute(
                     sa_select(MarzbanPanel).where(MarzbanPanel.panel_type == "marzban"))
                 for panel in res.scalars():
+                    from mirza.panels.service import _decrypt_secret
                     adapter = MarzbanAdapter({
                         "url_panel": panel.url_panel,
                         "username_panel": panel.username_panel,
-                        "password_panel": panel.password_panel_encrypted,
+                        "password_panel":
+                            _decrypt_secret(panel.password_panel_encrypted),
                     })
                     try:
                         nodes = await adapter.list_nodes()

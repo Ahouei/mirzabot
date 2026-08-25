@@ -124,6 +124,20 @@ async def pay_wallet(cb: CallbackQuery, db_user=None):
     _, code, price = cb.data.split("#")
     session = get_sessionmaker()()
     try:
+        # charge FIRST with an atomic conditional decrement — a config is
+        # never provisioned before the money is secured (anti double-spend)
+        from mirza.payments.wallet import WalletService
+        wallet = WalletService(session)
+        change = await wallet.change(str(db_user.id), -int(price), "purchase")
+        if not change.ok:
+            await session.rollback()
+            await cb.message.answer("❌ insufficient funds")
+            return
+    finally:
+        await session.close()
+
+    session = get_sessionmaker()()
+    try:
         async with PanelService(session) as panels:
             username = PanelService.generate_username("random", 8,
                                                       prefix="MZ")
@@ -134,16 +148,22 @@ async def pay_wallet(cb: CallbackQuery, db_user=None):
                 user_id=str(db_user.id),
                 tg_username=db_user.username or "")
             if not result.ok:
-                await session.rollback()
+                # provision failed: refund the charge in the same breath
+                await wallet.change(str(db_user.id), int(price),
+                                    "refund", note=f"provision failed {code}")
                 await cb.message.answer(f"❌ {result.error}")
                 return
-        from mirza.payments.wallet import WalletService
-        wallet = WalletService(session)
-        change = await wallet.change(str(db_user.id), -int(price), "purchase")
-        if not change.ok:
-            await session.rollback()
-            await cb.message.answer("❌ insufficient funds")
-            return
+    except Exception:
+        # panel error after charge: refund so money is never lost
+        from mirza.db import get_sessionmaker as _gsm
+        rs = _gsm()()
+        try:
+            from mirza.payments.wallet import WalletService as _W
+            await _W(rs).change(str(db_user.id), int(price), "refund",
+                                note=f"provision error {code}")
+        finally:
+            await rs.close()
+        raise
     finally:
         await session.close()
     await _deliver(cb.message, result)
@@ -156,10 +176,30 @@ async def pay_gateway(cb: CallbackQuery, db_user=None, bot=None):
     settings = get_settings()
     session = get_sessionmaker()()
     try:
+        # pending invoice FIRST so gateway settlement provisions the product
+        import secrets as _secrets
+        import time as _time
+
+        from mirza.models import Invoice
+        prod = await _product_row(session, code)
+        inv_token = _secrets.token_hex(10)
+        session.add(Invoice(
+            id_invoice=inv_token, user_id=str(db_user.id),
+            username=db_user.username or "",
+            service_location=(prod.location if prod else
+                              await _default_panel(session)),
+            product_name=code,
+            price_product=str(price),
+            volume=str(await _product_gb(session, code)),
+            service_time=str(await _product_days(session, code)),
+            time_sell=_time.strftime("%Y-%m-%d %H:%M:%S"),
+            status="pending"))
+        await session.commit()
+
         from mirza.payments.service import PaymentService
         svc = PaymentService(session)
         order = await svc.create_order(str(db_user.id), int(price), gw_name,
-                                       bot_type="main")
+                                       invoice_id=inv_token, bot_type="main")
         kv = {
             "zarinpal_merchant": await svc.kv("zarinpal_merchant"),
             "aqayepardakht_pin": await svc.kv("aqayepardakht_pin"),
@@ -257,6 +297,12 @@ async def _product_gb(session, code: str) -> int:
     res = await session.execute(
         sa_select(Product.volume_gb).where(Product.code_product == code))
     return res.scalar_one_or_none() or 0
+
+
+async def _product_row(session, code: str) -> Product | None:
+    res = await session.execute(
+        sa_select(Product).where(Product.code_product == code))
+    return res.scalar_one_or_none()
 
 
 async def _product_days(session, code: str) -> int:

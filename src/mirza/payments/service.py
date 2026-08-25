@@ -128,18 +128,31 @@ class PaymentService:
         if result.ok and result.subscription_url:
             inv.user_info = {**(inv.user_info or {}),
                              "sub_url": result.subscription_url}
+            inv.status = "enable"          # invoice is now an active service
             await self.session.commit()
         return result
+
+    async def settle_wallet_topup(self, order: PaymentReport,
+                                  cashback_pct: int = 0) -> int | None:
+        """Credit a paid top-up (+ optional cashback %) to the buyer's wallet.
+
+        The claim_paid() gate already guarantees single settlement; the
+        ledger ref makes any double-call visible in the audit trail.
+        Returns the new balance, or None when the credit was refused.
+        """
+        from mirza.payments.wallet import WalletService
+        wallet = WalletService(self.session)
+        change = await wallet.change(
+            order.user_id, order.price, reason="topup", ref=order.order_id)
+        if not change.ok:
+            return None
+        if cashback_pct:
+            bonus = order.price * cashback_pct // 100
+            if bonus > 0:
+                await wallet.change(order.user_id, bonus, reason="cashback",
+                                    ref=order.order_id)
+        return change.new_balance
 
 
 def _now_ts() -> int:
     return int(datetime.now(timezone.utc).timestamp())
-
-
-def _expire_from(inv: Invoice) -> int:
-    raw = inv.service_time or "30"
-    try:
-        days = float(raw.replace("D", "").replace("d", "").strip())
-    except ValueError:
-        days = 30
-    return _now_ts() + int(days * 86400)

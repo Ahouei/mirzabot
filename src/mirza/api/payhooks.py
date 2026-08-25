@@ -38,15 +38,27 @@ async def _notify_user(bot, uid: str, text: str) -> None:
         log.debug("notify failed for %s", uid)
 
 
-async def _report(s, kind: str, text: str) -> None:
-    """Send payment report to configured channel/topic."""
+def _app_bot(request: web.Request | None) -> object | None:
+    """Bot handle stashed on the aiohttp app at startup (None in tests)."""
+    if request is None:
+        return None
+    return request.app.get("bot")
+
+
+async def _report(s, kind: str, text: str, bot=None) -> None:
+    """Post a payment report to the configured channel/topic."""
     try:
         res = await s.execute(
             sa_select(Setting.value).where(Setting.key == "Channel_Report"))
         chat = res.scalar_one_or_none()
-        _ = chat, kind, text  # delivery via scheduler ctx in production run
+        if not chat or bot is None:
+            log.info("payment report (%s) not deliverable: chat=%r bot=%r",
+                     kind, chat, bot is not None)
+            return
+        await bot.send_message(chat, text)
     except Exception:
-        pass
+        # never fail the webhook over reporting; but make it loud
+        log.exception("payment report delivery failed (%s)", kind)
 
 
 async def settle_tuple(request_body: bytes, query: dict[str, str],
@@ -82,9 +94,11 @@ async def settle_tuple(request_body: bytes, query: dict[str, str],
 
 
 async def settle(request_body: bytes, query: dict[str, str],
-                 gateway_name: str, kv_extra: list[str]) -> web.Response:
+                 gateway_name: str, kv_extra: list[str],
+                 request: web.Request | None = None) -> web.Response:
     from mirza.payments.service import PaymentService
     from mirza.registry import registry
+    bot = _app_bot(request)
     session = get_sessionmaker()()
     try:
         svc = PaymentService(session)
@@ -106,7 +120,10 @@ async def settle(request_body: bytes, query: dict[str, str],
         else:
             await svc.settle_wallet_topup(order)
             text = f"💼 wallet topped up by {order.price:,}"
-        await _notify_user(None, order.user_id, text)
+        await _notify_user(bot, order.user_id, text)
+        await _report(session, "paymentreport",
+                      f"💳 {gateway_name} | {order.user_id} | "
+                      f"{order.price:,} | {order_id}", bot=bot)
         return web.Response(text="OK")
     finally:
         await session.close()
@@ -116,7 +133,7 @@ async def plisio_callback(request: web.Request) -> web.Response:
     body = await request.read()
     q = dict(request.rel_url.query)
     return await settle(body, q, "plisio",
-                        ["plisio_api"])
+                        ["plisio_api"], request=request)
 
 
 async def nowpayment_callback(request: web.Request) -> web.Response:
@@ -128,24 +145,27 @@ async def nowpayment_callback(request: web.Request) -> web.Response:
         q["order_id"] = str(data.get("order_id", ""))
     except Exception:
         pass
-    return await settle(body, q, "nowpayments", ["nowpayment_api"])
+    return await settle(body, q, "nowpayments", ["nowpayment_api"],
+                        request=request)
 
 
 async def zarinpal_callback(request: web.Request) -> web.Response:
     q = dict(request.rel_url.query)
     q.setdefault("amount", q.get("amount", "0"))
-    return await settle(b"", q, "zarinpal", ["zarinpal_merchant"])
+    return await settle(b"", q, "zarinpal", ["zarinpal_merchant"],
+                        request=request)
 
 
 async def aqaye_callback(request: web.Request) -> web.Response:
     q = dict(request.rel_url.query)
-    return await settle(b"", q, "aqayepardakht", ["aqayepardakht_pin"])
+    return await settle(b"", q, "aqayepardakht", ["aqayepardakht_pin"],
+                        request=request)
 
 
 async def iranpay_callback(request: web.Request) -> web.Response:
     q = dict(request.rel_url.query)
     return await settle(b"", q, "iranpay",
-                        ["iranpay_base", "apiiranpay"])
+                        ["iranpay_base", "apiiranpay"], request=request)
 
 
 async def cubepay_callback(request: web.Request) -> web.Response:

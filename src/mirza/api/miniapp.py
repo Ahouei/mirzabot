@@ -239,6 +239,41 @@ async def mini_purchase(user: User, data: dict) -> web.Response:
     try:
         order = await PaymentService(psession).create_order(
             user.id, int(prod.price_product), method, invoice_id=order_token)
+
+        if method == "wallet":
+            # inline settlement: charge, then provision immediately
+            from mirza.panels.service import PanelService
+            from mirza.payments.wallet import WalletService
+            wallet = WalletService(psession)
+            charge = await wallet.change(user.id, -int(prod.price_product),
+                                         "purchase", ref=order.order_id)
+            if not charge.ok:
+                await psession.rollback()
+                return _json({"msg": "insufficient balance"}, 402)
+            async with PanelService(psession) as panels:
+                result = await panels.create_user(
+                    prod.location or "", code, "",
+                    data_limit=int(float(prod.volume_gb) * 1024 ** 3),
+                    expire_ts=int(time.time()) + int(prod.service_days) * 86400,
+                    user_id=user.id, tg_username=user.username or "")
+            if not result.ok:
+                await wallet.change(user.id, int(prod.price_product),
+                                    "refund", note=f"provision failed {code}")
+                return _json({"msg": f"provision failed: {result.error}"}, 502)
+            inv2 = (await psession.execute(
+                sa_select(Invoice).where(Invoice.id_invoice == order_token)
+            )).scalar_one()
+            inv2.status = "enable"
+            await psession.commit()
+            return _json({
+                "invoice": {"id_invoice": order_token,
+                            "price": prod.price_product},
+                "order": {"order_id": order.order_id, "method": method,
+                          "status": "paid"},
+                "config": {"subscription_url": result.subscription_url,
+                           "links": result.links or []},
+            })
+
         return _json({
             "invoice": {"id_invoice": order_token,
                         "price": prod.price_product},

@@ -19,7 +19,6 @@ from sqlalchemy import update as sa_update
 from mirza.config import get_settings
 from mirza.db import get_sessionmaker
 from mirza.models import (
-    Category,
     Discount,
     Invoice,
     MarzbanPanel,
@@ -67,61 +66,6 @@ def auth(fn):
         return await fn(request)
 
     return wrapper
-
-
-# ── mini-app user-token flow (api/miniapp.php) ───────────────────
-@auth
-async def miniapp(request: web.Request) -> web.Response:
-    """actions=services|balance|buy|token — session token decides identity."""
-    q = dict(request.rel_url.query)
-    action = q.get("actions", "me")
-    session = get_sessionmaker()()
-    try:
-        token = q.get("token", "")
-        if action == "token":
-            # exchange telegram id + bot payload for a session token
-            uid = str(q.get("user_id", ""))
-            row = await session.get(User, uid)
-            if row is None:
-                return _json({"msg": "user not found"}, 404)
-            if not row.token:
-                row.token = secrets.token_hex(16)
-                await session.commit()
-            return _json({"token": row.token})
-        res = await session.execute(
-            sa_select(User).where(User.token == token))
-        user = res.scalar_one_or_none()
-        if user is None:
-            return _json({"msg": "Token invalid"}, 403)
-        if action == "me":
-            return _json({"user": {"id": user.id, "username": user.username,
-                                   "balance": user.balance,
-                                   "lang": user.lang}})
-        if action == "services":
-            res = await session.execute(
-                sa_select(Invoice).where(Invoice.user_id == user.id))
-            invs = [{"id": i.id_invoice, "product": i.product_name,
-                     "status": i.status} for i in res.scalars()]
-            return _json({"services": invs})
-        if action == "products":
-            res = await session.execute(sa_select(Product))
-            prods = [{"code": p.code_product, "name": p.name_product,
-                      "price": p.price_product, "volume": p.volume_gb,
-                      "days": p.service_days} for p in res.scalars()]
-            return _json({"products": prods})
-        if action == "categories":
-            res = await session.execute(sa_select(Category))
-            cats = [{"id": c.id, "title": c.title} for c in res.scalars()]
-            return _json({"categories": cats})
-        if action == "payments":
-            res = await session.execute(
-                sa_select(PaymentReport).where(PaymentReport.user_id == user.id))
-            pays = [{"order": o.order_id, "price": o.price,
-                     "status": o.payment_status} for o in res.scalars()]
-            return _json({"payments": pays})
-        return _json({"msg": "unknown action"}, 400)
-    finally:
-        await session.close()
 
 
 # ── admin-side resources (api/users.php, product.php, panels.php...) ──
@@ -315,10 +259,11 @@ async def verify_user(request: web.Request) -> web.Response:
 
 
 # ── app wiring ───────────────────────────────────────────────────
-def make_app() -> web.Application:
+def make_app(bot=None) -> web.Application:
     app = web.Application()
-    r = web.Application()  # placeholder to keep linters calm
-    del r
+    if bot is not None:
+        # settlement path (payhooks) uses this to DM buyers + report to admin
+        app["bot"] = bot
     # legacy miniapp action API + token exchange + static bundle
     from .miniapp import miniapp, token_exchange
     app.router.add_get("/api/miniapp", miniapp)

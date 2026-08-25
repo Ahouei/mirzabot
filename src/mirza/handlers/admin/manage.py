@@ -55,7 +55,11 @@ async def add_giftcode(message: Message):
         if exists is not None:
             await message.answer(f"⚠️ code `{code}` already exists")
             return
-        session.add(Discount(code=code, usage_limit=limit))
+        # /giftcode <code> <limit> [percent] — value defaults to 20%
+        parts2 = (message.text or "").split()
+        percent = int(parts2[3]) if len(parts2) > 3 else 20
+        session.add(Discount(code=code, usage_limit=limit,
+                             discount_percent=max(0, min(percent, 100))))
         await session.commit()
     finally:
         await session.close()
@@ -69,13 +73,15 @@ async def list_giftcodes(message: Message):
     try:
         res = await session.execute(sa_select(Discount).limit(50))
         rows = list(res.scalars().all())
-        used = {g.code: g for g in (await session.execute(
-            sa_select(GiftCodeConsumed))).scalars()}
+        from sqlalchemy import func as sa_func
+        counts = dict((await session.execute(
+            sa_select(GiftCodeConsumed.code, sa_func.count())
+            .group_by(GiftCodeConsumed.code))).all())
     finally:
         await session.close()
     lines = ["🎟 codes:"]
     for d in rows:
-        consumed = sum(1 for u in used.values() if u.code == d.code)
+        consumed = int(counts.get(d.code, 0))
         lines.append(f"• <code>{d.code}</code> −{d.discount_percent}% "
                      f"used {consumed}/{d.usage_limit or '∞'}")
     await message.answer("\n".join(lines) or "none")

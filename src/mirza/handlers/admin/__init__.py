@@ -21,7 +21,31 @@ router = Router(name="admin")
 
 
 def _is_admin(tg_id: int) -> bool:
-    return tg_id == get_settings().admin_number
+    """Primary env admin is superuser; DB admin rows also pass."""
+    if tg_id == get_settings().admin_number:
+        return True
+    # DB-backed admins with a 60s process cache (sync query, tiny table)
+    global _admin_cache, _admin_cache_at
+    import time as _t
+    now = _t.time()
+    if _admin_cache is None or now - _admin_cache_at > 60:
+        try:
+            from mirza.db import get_sessionmaker
+            from mirza.models import Admin
+            s = get_sessionmaker()()
+            try:
+                rows = s.execute(sa_select(Admin.id_admin)).scalars().all()
+            finally:
+                s.close()
+            _admin_cache = {int(r) for r in rows}
+        except Exception:
+            _admin_cache = set()
+        _admin_cache_at = now
+    return tg_id in (_admin_cache or set())
+
+
+_admin_cache: set[int] | None = None
+_admin_cache_at: float = 0.0
 
 
 class AdminGate:
@@ -211,7 +235,6 @@ async def broadcast_cmd(message: Message):
 
 
 _BROADCAST: dict[str, bool] = {}
-_TOPUP_UNUSED: dict = {}
 
 
 @router.message(F.command("cancel"))
