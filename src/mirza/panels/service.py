@@ -116,7 +116,10 @@ class PanelService:
             service_location=panel_name,
             product_name=result.user.username,
             volume=str(data_limit),
-            service_time=str(expire_ts),
+            # M7: service_time is a DAY COUNT everywhere (legacy semantics);
+            # the absolute expiry lives on the panel itself.
+            service_time=str(max(
+                (expire_ts - _now() + 86399) // 86400, 1)),
             uuid=username,
             user_info={"tg_username": tg_username, "kind": kind},
             status="enable",
@@ -278,7 +281,8 @@ def _decrypt_secret(stored: str) -> str:
     if not stored:
         return ""
     from mirza.config import get_settings
-    key_source = get_settings().session_secret.encode()
+    s = get_settings()
+    key_source = (s.panel_secret or s.session_secret).encode()
     try:
         import base64
         import hashlib

@@ -27,22 +27,26 @@ depends_on = None
 def upgrade() -> None:
     # JSONB is postgres-only; alembic renders the String variant on sqlite.
     for table in Base.metadata.sorted_tables:
-        col_defs = []
-        for column in table.columns:
-            col = sa.Column(
-                column.name,
-                column.type,
-                primary_key=column.primary_key,
-                autoincrement=column.autoincrement,
-                nullable=column.nullable,
-                default=column.default,
-                server_default=column.server_default,
-            )
-            col.table = table
-            col_defs.append(col.compile(dialect=op.get_bind().dialect))
         table.create(bind=op.get_bind())
+    # legacy compatibility view: old PHP read flat columns from `setting`;
+    # the rewrite stores KV rows. Expose a KV-shaped view under the legacy
+    # expected helper names so imported data stays readable either way.
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.execute(
+            "CREATE OR REPLACE VIEW setting_legacy AS "
+            "SELECT key, value FROM setting")
+    else:
+        op.execute(
+            "CREATE VIEW IF NOT EXISTS setting_legacy AS "
+            "SELECT key, value FROM setting")
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.execute("DROP VIEW IF EXISTS setting_legacy")
+    else:
+        op.execute("DROP VIEW IF EXISTS setting_legacy")
     for table in reversed(Base.metadata.sorted_tables):
         table.drop(bind=op.get_bind())

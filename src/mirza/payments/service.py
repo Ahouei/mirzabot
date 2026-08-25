@@ -128,7 +128,11 @@ class PaymentService:
         if result.ok and result.subscription_url:
             inv.user_info = {**(inv.user_info or {}),
                              "sub_url": result.subscription_url}
-            inv.status = "enable"          # invoice is now an active service
+            # M7: on-hold products start their clock at activation. The
+            # Product model has no on-hold flag yet (panel-level on_hold_test
+            # lives on MarzbanPanel); wire it via panel row until a product
+            # column exists.
+            inv.status = "enable"
             await self.session.commit()
         return result
 

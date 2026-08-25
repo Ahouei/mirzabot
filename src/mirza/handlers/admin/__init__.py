@@ -293,11 +293,20 @@ async def manual_sell(message: Message):
     from mirza.panels.service import PanelService
     session = get_sessionmaker()()
     try:
+        # product row is authoritative (audit H2): volume/days/location
+        prod = (await session.execute(
+            sa_select(Product).where(Product.code_product == code))
+        ).scalar_one_or_none()
+        if prod is None:
+            await message.answer(f"❌ unknown product code: {code}")
+            return
         async with PanelService(session) as panels:
             username = PanelService.generate_username("random", 8)
             result = await panels.create_user(
-                await _default_panel_name(session), code, username,
-                data_limit=0, expire_ts=int(time.time()) + 30 * 86400,
+                prod.location or await _default_panel_name(session),
+                code, username,
+                data_limit=int(float(prod.volume_gb) * 1024 ** 3),
+                expire_ts=int(time.time()) + int(prod.service_days) * 86400,
                 user_id=uid, tg_username="", kind="manual")
     finally:
         await session.close()

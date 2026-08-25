@@ -6,13 +6,14 @@ Flow: buy -> category -> product list -> panel (location) pick -> confirm
 from __future__ import annotations
 
 import secrets
+import time
 
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select as sa_select
 
 from mirza.db import get_sessionmaker
-from mirza.models import Category, Discount, Product
+from mirza.models import Category, Discount, GiftCodeConsumed, Product
 from mirza.panels.service import PanelService
 from mirza.registry import registry
 
@@ -86,7 +87,8 @@ async def product_pick(cb: CallbackQuery, db_user=None):
 async def buy_confirm(cb: CallbackQuery, db_user=None, bot=None):
     code = cb.data.split("#", 1)[1]
     info = _pending.get(str(db_user.id), {})
-    price_off = info.get("discount", 0)
+    price_off = int(info.get("discount", 0))
+    pct_off = int(info.get("discount_percent", 0))
     session = get_sessionmaker()()
     try:
         res = await session.execute(
@@ -97,7 +99,10 @@ async def buy_confirm(cb: CallbackQuery, db_user=None, bot=None):
     if product is None:
         await cb.answer("product missing", show_alert=True)
         return
-    price = max(product.price_product - price_off, 0)
+    price = product.price_product
+    if pct_off:
+        price -= price * pct_off // 100
+    price = max(price - price_off, 0)
 
     # wallet-first path (parity: legacy offers balance pay when sufficient)
     from mirza.payments.wallet import WalletService
@@ -167,6 +172,69 @@ async def pay_wallet(cb: CallbackQuery, db_user=None):
     finally:
         await session.close()
     await _deliver(cb.message, result)
+    await _count_redemption(str(db_user.id))
+    await _pay_referral(buyer_id=str(db_user.id), amount_paid=price)
+
+
+async def _count_redemption(user_id: str) -> None:
+    """Count a discount-code redemption (usage_limit enforcement, M1/M2)."""
+    info = _pending.get(user_id) or {}
+    dcode = info.pop("discount_code", None)
+    if not dcode:
+        return
+    info.pop("discount", None)
+    info.pop("discount_percent", None)
+    session = get_sessionmaker()()
+    try:
+        from sqlalchemy import update as sa_update
+        await session.execute(
+            sa_update(Discount)
+            .where(Discount.code == dcode)
+            .values(used_count=Discount.used_count + 1))
+        session.add(GiftCodeConsumed(code=dcode, user_id=user_id))
+        await session.commit()
+    except Exception:
+        await session.rollback()
+    finally:
+        await session.close()
+
+
+async def _pay_referral(buyer_id: str, amount_paid: int) -> None:
+    """Credit the buyer's referrer a commission % (M5).
+
+    Commission percent comes from the single Affiliate row
+    (porsant_one_buy) when status_commission is enabled.
+    """
+    session = get_sessionmaker()()
+    try:
+        from mirza.models import Affiliate, User
+        user = await session.get(User, str(buyer_id))
+        if user is None or not user.referrer_id:
+            return
+        aff = (await session.execute(sa_select(Affiliate))).scalars().first()
+        if aff is None or not aff.status_commission or not aff.porsant_one_buy:
+            return
+        commission = amount_paid * aff.porsant_one_buy // 100
+        if commission <= 0:
+            return
+        from mirza.payments.wallet import WalletService
+        change = await WalletService(session).change(
+            str(user.referrer_id), commission, "referral",
+            ref=f"buyer:{buyer_id}")
+        if change.ok:
+            bot = getattr(_pay_referral, "bot", None)
+            if bot is not None:
+                try:
+                    await bot.send_message(
+                        int(user.referrer_id),
+                        f"💰 referral commission: {commission:,}")
+                except Exception:
+                    pass
+    except Exception:
+        log = __import__("logging").getLogger(__name__)
+        log.debug("referral payout failed", exc_info=True)
+    finally:
+        await session.close()
 
 
 @router.callback_query(F.data.startswith("paygw#"))
@@ -263,12 +331,34 @@ async def discount_code(message: Message, db_user=None):
         disc = res.scalar_one_or_none()
     finally:
         await session.close()
-    if disc is None or (disc.usage_limit and disc.used_count >= disc.usage_limit):
-        await message.answer("❌ invalid/expired code")
+    now_ts = int(time.time())
+    if disc is None:
+        await message.answer("❌ invalid code")
         return
-    off = disc.price_discount or 0
-    info["discount"] = off
-    await message.answer(f"🎟 −{off:,} applied. tap your product again to pay.")
+    if disc.usage_limit and (disc.used_count or 0) >= disc.usage_limit:
+        await message.answer("❌ code fully redeemed")
+        return
+    if getattr(disc, "expires_at", None):
+        try:
+            if now_ts > int(disc.expires_at):
+                await message.answer("❌ code expired")
+                return
+        except (TypeError, ValueError):
+            pass
+    # percent codes: store the percent; fixed codes: absolute amount.
+    # buy_confirm resolves the final price from the product at pay time.
+    info["discount_code"] = disc.code
+    if disc.discount_percent:
+        info["discount_percent"] = disc.discount_percent
+        info.pop("discount", None)
+        await message.answer(
+            f"🎟 −{disc.discount_percent}% applied. tap your product again to pay.")
+    else:
+        off = disc.price_discount or 0
+        info["discount"] = off
+        info.pop("discount_percent", None)
+        await message.answer(f"🎟 −{off:,} applied. tap your product again to pay.")
+    _pending[str(db_user.id)] = info
 
 
 # ── helpers ──────────────────────────────────────────────────────

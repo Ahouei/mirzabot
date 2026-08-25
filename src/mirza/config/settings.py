@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     # ── API surface ─────────────────────────────────────────────
     api_tokens_file: str = "hash.txt"    # extra tokens, mirrors legacy api/hash.txt
     session_secret: str = "change-me"    # web panel sessions / itsdangerous signing
+    panel_secret: str = ""               # Fernet source for panel passwords;
+                                         # falls back to session_secret when unset
 
     # ── Scheduler ───────────────────────────────────────────────
     timezone: str = "Asia/Tehran"

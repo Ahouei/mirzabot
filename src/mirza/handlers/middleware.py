@@ -43,21 +43,34 @@ class AuthMiddleware(BaseMiddleware):
                 return None
             data["db_user"] = user
 
-            # forced channel membership (setting.channel_lock = @channel)
+            # forced channel membership: every row in `channels`
+            # (populated by /addchannel) PLUS the legacy channel_lock setting
             res2 = await session.execute(
                 sa_select(Setting.value).where(Setting.key == "channel_lock"))
+            from mirza.models import Channel
+            ch_rows = [c[0] for c in (await session.execute(
+                sa_select(Channel.remark).where(
+                    Channel.remark != ""))).all()]
             lock = res2.scalar_one_or_none()
-            if lock and not user.join_channel_ok and \
+            required: list[str] = list(ch_rows)
+            if lock:
+                required.append(str(lock))
+            if required and not user.join_channel_ok and \
                     not _is_admin(int(tg_user.id)):
-                ok = await _check_member(data.get("bot"), str(lock),
-                                         int(tg_user.id))
-                if not ok:
+                not_joined = []
+                for ch in required:
+                    if not await _check_member(data.get("bot"), ch,
+                                               int(tg_user.id)):
+                        not_joined.append(ch)
+                if not_joined:
+                    first = not_joined[0]
                     if isinstance(event, Message):
                         from aiogram.utils.keyboard import InlineKeyboardBuilder
                         kb = InlineKeyboardBuilder()
                         kb.button(text="✅ عضو شدم / Joined",
                                   callback_data="confirmchannel")
-                        kb.button(text="📢 کانال / Channel", url=f"https://t.me/{str(lock).lstrip('@')}")
+                        kb.button(text="📢 کانال / Channel",
+                                  url=_channel_url(first))
                         await event.answer(
                             t("users.channel.left_channel", user.lang),
                             reply_markup=kb.as_markup())
@@ -93,13 +106,24 @@ def _is_admin(tg_id: int) -> bool:
 
 
 async def _check_member(bot, channel: str, user_id: int) -> bool:
+    """Fail-open on Telegram API errors (legacy behavior, deliberate:
+    a transient API blip must not lock paying customers out)."""
     if bot is None:
         return True
     try:
-        member = await bot.get_chat_member(channel.lstrip("@"), user_id)
+        # get_chat_member accepts @username or numeric id directly; the old
+        # lstrip("@") produced an invalid bare username — pass as-is instead
+        member = await bot.get_chat_member(channel, user_id)
         return member.status not in ("left", "kicked")
     except Exception:
-        return True   # fail-open like legacy
+        return True   # deliberate fail-open (see docstring)
+
+
+def _channel_url(channel: str) -> str:
+    ch = channel.strip()
+    if ch.startswith("http"):
+        return ch
+    return f"https://t.me/{ch.lstrip('@')}"
 
 
 async def _safe_reply(event, text: str) -> None:

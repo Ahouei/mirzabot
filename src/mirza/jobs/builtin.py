@@ -53,11 +53,27 @@ def _register_jobs() -> None:
                 res = await s.execute(
                     sa_select(Invoice).where(Invoice.status == "enable"))
                 warned = 0
+                bot = ctx.bot
                 for inv in res.scalars():
                     notif = inv.notifications or {}
                     expire_ts = _parse_expire(inv.service_time)
                     if expire_ts and now <= datetime.fromtimestamp(
                             expire_ts, tz=timezone.utc) <= soon and not notif.get("time"):
+                        # customer DM first (legacy behavior), then admin mirror
+                        if bot is not None and inv.user_id:
+                            try:
+                                from aiogram.utils.keyboard import InlineKeyboardBuilder
+                                kb = InlineKeyboardBuilder()
+                                kb.button(text="♻️ renew",
+                                          callback_data=f"ext#{inv.product_name}#{inv.id_invoice}")
+                                await bot.send_message(
+                                    int(inv.user_id),
+                                    "⏳ your service expires in less than "
+                                    "24 hours — renew to stay connected:",
+                                    reply_markup=kb.as_markup())
+                            except Exception:
+                                log.debug("expiry DM failed for %s",
+                                          inv.user_id, exc_info=True)
                         await ctx.send_report(
                             "notifications",
                             f"⏳ invoice {inv.id_invoice} expires in <24h")
@@ -123,6 +139,24 @@ def _register_jobs() -> None:
                         used_ratio = (u.used_traffic or 0) / max(u.data_limit, 1)
                         notif = inv.notifications or {}
                         if used_ratio >= 0.8 and not notif.get("volume"):
+                            # customer DM (legacy behavior): volume warning + buy-extra CTA
+                            bot = ctx.bot
+                            if bot is not None and inv.user_id:
+                                try:
+                                    from aiogram.utils.keyboard import (
+                                        InlineKeyboardBuilder,
+                                    )
+                                    kb = InlineKeyboardBuilder()
+                                    kb.button(text="📦 buy extra volume",
+                                              callback_data=f"exv#{inv.product_name}#{inv.id_invoice}")
+                                    await bot.send_message(
+                                        int(inv.user_id),
+                                        f"📊 you've used {int(used_ratio*100)}% "
+                                        "of your volume — top up before it runs out:",
+                                        reply_markup=kb.as_markup())
+                                except Exception:
+                                    log.debug("volume DM failed for %s",
+                                              inv.user_id, exc_info=True)
                             await ctx.send_report(
                                 "notifications",
                                 f"📊 {inv.id_invoice} used ≥80% of volume")
@@ -411,12 +445,23 @@ async def _flag(ctx: JobContext, key: str) -> dict:
 
 
 def _parse_expire(raw: str | None) -> int | None:
+    """Return absolute epoch for an invoice's service_time.
+
+    M7 semantics: service_time stores a DAY COUNT. Legacy wrote either a
+    day count or an absolute timestamp; disambiguate by magnitude —
+    values under 36500 (~100 years in days) are day counts.
+    """
     if not raw:
         return None
     try:
-        return int(float(str(raw).replace("D", "").replace("d", "").strip()))
+        val = int(float(str(raw).replace("D", "").replace("d", "").strip()))
     except ValueError:
         return None
+    if 0 < val < 36500:            # day count -> epoch
+        return int(datetime.now(timezone.utc).timestamp()) + val * 86400
+    if val >= 36500:               # already an epoch (legacy rows)
+        return val
+    return None
 
 
 def _days_s(raw: str | None) -> int:

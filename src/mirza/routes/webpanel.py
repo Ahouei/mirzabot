@@ -77,10 +77,11 @@ async def login_post(request):
     ok = False
     try:
         import bcrypt
-        # dummy hash for timing parity when user missing
-        target = stored or ("$2y$10$dummy.hash.for.timing.attack."
-                            "prevention.xxxxxxxxxxxxxxxx")
-        ok = bcrypt.checkpw(password.encode(), target.replace("$2y$", "$2b$").encode())
+        # valid bcrypt hash of random bytes for timing parity when missing
+        target = stored or bcrypt.hashpw(
+            secrets.token_bytes(16), bcrypt.gensalt(rounds=10)).decode()
+        ok = bcrypt.checkpw(password.encode(),
+                            target.replace("$2y$", "$2b$").encode())
         ok = ok and bool(stored)
     except Exception:
         ok = False
@@ -90,7 +91,11 @@ async def login_post(request):
     sid = secrets.token_hex(24)
     _SESSIONS[sid] = (username, time.time())
     resp = web.HTTPFound("/panel/")
-    resp.set_cookie("mirza_session", sid, httponly=True, samesite="Lax")
+    # Secure when served over TLS (Caddy terminates https; local dev is http)
+    is_https = request.headers.get("X-Forwarded-Proto", "") == "https" \
+        or request.url.scheme == "https"
+    resp.set_cookie("mirza_session", sid, httponly=True, samesite="Lax",
+                    secure=is_https)
     return resp
 
 
@@ -135,10 +140,13 @@ async def dashboard(request):
 
 
 def _table(headers: list[str], rows: list[list]) -> str:
+    """All cell values are escaped here; callers pass raw data only."""
     out = ["<div class=card><table><tr>" +
-           "".join(f"<th>{h}</th>" for h in headers) + "</tr>"]
+           "".join(f"<th>{html.escape(str(h))}</th>" for h in headers) +
+           "</tr>"]
     for row in rows[:100]:
-        out.append("<tr>" + "".join(f"<td>{v}</td>" for v in row) + "</tr>")
+        out.append("<tr>" + "".join(
+            f"<td>{html.escape(str(v))}</td>" for v in row) + "</tr>")
     out.append("</table></div>")
     return "".join(out)
 
@@ -222,7 +230,7 @@ async def invoices_page(request):
             stmt = stmt.where(Invoice.status == status)
         res = await session.execute(stmt)
         rows = [[i.id_invoice, i.user_id, i.service_location,
-                 html.escape(i.product_name or ""), i.uuid,
+                 i.product_name or "", i.uuid,
                  f"{i.price_product}", i.status] for i in res.scalars()]
     finally:
         await session.close()
