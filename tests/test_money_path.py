@@ -62,14 +62,14 @@ def card2card_gateway():
 
 
 async def test_gateway_product_order_provisions_once(card2card_gateway):
-    from mirza.api.payhooks import settle
-    from mirza.db import get_sessionmaker
-    from mirza.models import (Invoice, MarzbanPanel, PaymentReport, Product,
-                              User)
     from sqlalchemy import select as sa_select
+
+    from mirza.api.payhooks import settle
 
     # stub the marzban adapter so provisioning needs no HTTP
     from mirza.contracts import PanelResult, PanelUser
+    from mirza.db import get_sessionmaker
+    from mirza.models import Invoice, MarzbanPanel, PaymentReport, Product, User
     from mirza.panels.marzban import MarzbanAdapter
 
     async def _fake_create(self, username, *, data_limit, expire_ts, note="",
@@ -131,11 +131,13 @@ async def test_gateway_product_order_provisions_once(card2card_gateway):
 
 
 async def test_wallet_topup_credits_exactly_once(card2card_gateway):
+    import secrets
+
+    from sqlalchemy import select as sa_select
+
     from mirza.api.payhooks import settle
     from mirza.db import get_sessionmaker
     from mirza.models import PaymentReport, User
-    from sqlalchemy import select as sa_select
-    import secrets
 
     s = get_sessionmaker()()
     s.add(User(id="u2", balance=0))
@@ -165,10 +167,9 @@ async def test_wallet_topup_credits_exactly_once(card2card_gateway):
 
 
 async def test_insufficient_balance_never_provisions():
-    from mirza.panels.service import PanelService
-    from mirza.payments.wallet import WalletService
     from mirza.db import get_sessionmaker
     from mirza.models import User
+    from mirza.payments.wallet import WalletService
 
     s = get_sessionmaker()()
     s.add(User(id="u3", balance=100))
