@@ -73,7 +73,11 @@ class PaymentService:
 
     # ── settlement ────────────────────────────────────────────────
     async def settle_direct_buy(self, order: PaymentReport) -> ProvisionResult | None:
-        """Deliver the config attached to a direct-buy order."""
+        """Deliver the config attached to a direct-buy order.
+
+        Resolves the product row (authoritative volume/days/panel) rather
+        than trusting free-text invoice fields, and converts GB to bytes.
+        """
         if not order.invoice_id:
             return None
         res = await self.session.execute(
@@ -81,13 +85,42 @@ class PaymentService:
         inv = res.scalar_one_or_none()
         if inv is None:
             return None
+
+        from mirza.models import Product
+        product: Product | None = None
+        if inv.product_name:
+            product = (await self.session.execute(
+                sa_select(Product).where(
+                    Product.code_product == inv.product_name)
+            )).scalar_one_or_none()
+
+        volume_gb = float(product.volume_gb) if product else 0.0
+        if not volume_gb:
+            try:
+                raw = abs(float(inv.volume or 0))
+                volume_gb = raw if raw <= 1000 else raw / (1024 ** 3)
+            except ValueError:
+                volume_gb = 0.0
+        data_limit = int(volume_gb * 1024 ** 3)
+
+        days = float(product.service_days) if product else 30.0
+        if not product:
+            try:
+                days = float(str(inv.service_time or "30")
+                             .replace("D", "").replace("d", "").strip())
+            except ValueError:
+                days = 30.0
+        location = (product.location if product else None) \
+            or inv.service_location
+        code = product.code_product if product else (inv.product_name or "")
+
         async with PanelService() as panels:
             result = await panels.create_user(
-                inv.service_location,
-                inv.note or "",
+                location,
+                code,
                 inv.uuid or "",
-                data_limit=int(float(inv.volume or 0)),
-                expire_ts=_expire_from(inv),
+                data_limit=data_limit,
+                expire_ts=_now_ts() + int(days * 86400),
                 user_id=order.user_id,
                 tg_username=inv.username or "",
                 kind="buy",
@@ -97,21 +130,6 @@ class PaymentService:
                              "sub_url": result.subscription_url}
             await self.session.commit()
         return result
-
-    async def settle_wallet_topup(self, order: PaymentReport,
-                                  cashback_pct: int = 0) -> int | None:
-        from mirza.payments.wallet import WalletService
-        wallet = WalletService(self.session)
-        change = await wallet.change(
-            order.user_id, order.price, reason="topup", ref=order.order_id)
-        if not change.ok:
-            return None
-        if cashback_pct:
-            bonus = order.price * cashback_pct // 100
-            if bonus > 0:
-                await wallet.change(order.user_id, bonus, reason="cashback",
-                                    ref=order.order_id)
-        return change.new_balance
 
 
 def _now_ts() -> int:

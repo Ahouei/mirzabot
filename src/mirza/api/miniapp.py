@@ -6,12 +6,14 @@ Auth: per-user session token (user.token), same as legacy.
 """
 from __future__ import annotations
 
+import json
 import secrets
 import time
 
 from aiohttp import web
 from sqlalchemy import select as sa_select
 
+from mirza.config import get_settings
 from mirza.db import get_sessionmaker
 from mirza.models import Category, Invoice, MarzbanPanel, Product, User
 from mirza.panels.service import PanelService
@@ -192,8 +194,9 @@ async def mini_custom_price(user: User, data: dict) -> web.Response:
 
 
 async def mini_purchase(user: User, data: dict) -> web.Response:
-    """Create an unpaid order for the picked product (wallet pay follows)."""
+    """Create invoice + Unpaid order; reply with pay options (wallet/gw)."""
     code = str(data.get("code_product", ""))
+    method = str(data.get("method", "wallet"))
     session = get_sessionmaker()()
     try:
         prod = (await session.execute(
@@ -230,10 +233,21 @@ async def mini_purchase(user: User, data: dict) -> web.Response:
         await session3.commit()
     finally:
         await session3.close()
-    return _json({
-        "invoice": {"id_invoice": order_token,
-                    "price": prod.price_product},
-    })
+
+    from mirza.payments.service import PaymentService
+    psession = get_sessionmaker()()
+    try:
+        order = await PaymentService(psession).create_order(
+            user.id, int(prod.price_product), method, invoice_id=order_token)
+        return _json({
+            "invoice": {"id_invoice": order_token,
+                        "price": prod.price_product},
+            "order": {"order_id": order.order_id,
+                      "method": method,
+                      "status": "Unpaid"},
+        })
+    finally:
+        await psession.close()
 
 
 ACTIONS = {
@@ -263,21 +277,78 @@ async def miniapp(request: web.Request) -> web.Response:
     return await handler(user, data)
 
 
+def verify_init_data(init_data: str, bot_token: str,
+                     max_age_s: int = 86400) -> dict | None:
+    """Validate Telegram WebApp initData per core.telegram.org spec.
+
+    Returns the parsed user dict when valid, else None. Checks:
+      1. HMAC-SHA256(secret_key, data_check_string) == hash
+         secret_key = HMAC(bot_token, "WebAppData")
+      2. auth_date freshness (replay window)
+    """
+    import hashlib
+    import hmac as hmac_mod
+    from urllib.parse import parse_qsl
+
+    if not init_data or not bot_token:
+        return None
+    pairs = sorted(parse_qsl(init_data, keep_blank_values=True))
+    given = dict(pairs).get("hash", "")
+    if not given:
+        return None
+    # Telegram's data_check_string excludes the hash field itself
+    data_check = "\n".join(f"{k}={v}" for k, v in pairs if k != "hash")
+    secret = hmac_mod.new(b"WebAppData", bot_token.encode(),
+                          hashlib.sha256).digest()
+    calc = hmac_mod.new(secret, data_check.encode(), hashlib.sha256).hexdigest()
+    if not hmac_mod.compare_digest(calc, given):
+        return None
+    try:
+        auth_date = int(dict(pairs).get("auth_date", "0"))
+    except ValueError:
+        return None
+    if auth_date and time.time() - auth_date > max_age_s:
+        return None
+    try:
+        return json.loads(dict(pairs).get("user", "{}"))
+    except Exception:
+        return {}
+
+
 async def token_exchange(request: web.Request) -> web.Response:
-    """Issue/return the Mini App session token for a Telegram id."""
+    """Issue/return the Mini App session token for a Telegram user.
+
+    Identity comes from signed Telegram WebApp initData — a bare user_id is
+    rejected so accounts cannot be hijacked by guessing numeric ids.
+    """
+    settings = get_settings()
     try:
         body = await request.json()
     except Exception:
         body = {}
-    uid = str(body.get("user_id", "") or request.rel_url.query.get("user_id", ""))
-    if not uid.isdigit():
-        return _json({"msg": "user_id required"}, 400)
+    init_data = str(body.get("initData")
+                    or request.rel_url.query.get("initData") or "")
+    if not init_data:
+        # dev convenience only when no bot token configured (nothing to forge)
+        if settings.api_key:
+            return _json({"msg": "initData required"}, 401)
+        uid = str(body.get("user_id", "")
+                  or request.rel_url.query.get("user_id", ""))
+        if not uid.isdigit():
+            return _json({"msg": "initData or user_id required"}, 400)
+    else:
+        tg_user = verify_init_data(init_data, settings.api_key)
+        if not tg_user or not str(tg_user.get("id", "")).isdigit():
+            return _json({"msg": "invalid initData"}, 401)
+        uid = str(tg_user["id"])
+
     session = get_sessionmaker()()
     try:
         try:
             row = await session.get(User, uid)
             if row is None:
-                row = User(id=uid)
+                row = User(id=uid, username=str(
+                    body.get("username") or uid))
                 session.add(row)
             if not row.token:
                 row.token = secrets.token_hex(16)

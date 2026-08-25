@@ -37,6 +37,8 @@ def _page(title: str, body: str) -> web.Response:
 
 
 def require_auth(fn):
+    from functools import wraps
+    @wraps(fn)
     async def wrapper(request):
         sid = request.cookies.get("mirza_session", "")
         sess = _SESSIONS.get(sid)
@@ -236,15 +238,17 @@ async def invoices_page(request):
 SETTINGS_GROUPS = [
     ("shop", ["channel_lock", "default_panel", "support_id",
               "help_text", "broadcast_text"]),
-    ("payments", ["zarinpal_merchant", "aqayepardakht_pin",
-                  "nowpayment_api", "plisio_api", "iranpay_base",
-                  "apiternado", "feeternado", "feestatusternado",
-                  "chashbackstar"]),
 ]
 
+# gateway keys belong to PaySetting (what payment services read),
+# NOT the shop `setting` KV — writing them there silently no-ops.
+PAY_KEYS = {"zarinpal_merchant", "aqayepardakht_pin", "nowpayment_api",
+            "plisio_api", "iranpay_base", "apiternado", "feeternado",
+            "feestatusternado", "chashbackstar"}
 
+
+@require_auth
 async def settings_page(request):
-    from mirza.models import Setting as _SettingModel
     if request.method == "POST":
         form = await request.post()
         session = get_sessionmaker()()
@@ -252,13 +256,19 @@ async def settings_page(request):
             for key in form.keys():
                 val = str(form[key])
                 import json as _j
-                row = _SettingModel(key=key, value=val, value_json=None)
-                try:
-                    parsed = _j.loads(val)
-                    if isinstance(parsed, (dict, list)):
-                        row.value_json = parsed
-                except Exception:
-                    pass
+                row: object
+                if key in PAY_KEYS:
+                    from mirza.models import PaySetting as _PayRow
+                    row = _PayRow(name_pay=key, value_pay=val)
+                else:
+                    from mirza.models import Setting as _SettingModel
+                    row = _SettingModel(key=key, value=val, value_json=None)
+                    try:
+                        parsed = _j.loads(val)
+                        if isinstance(parsed, (dict, list)):
+                            row.value_json = parsed  # type: ignore[attr-defined]
+                    except Exception:
+                        pass
                 await session.merge(row)
             await session.commit()
         finally:

@@ -21,6 +21,8 @@ async def live(tmp_path, monkeypatch):
     url = f"sqlite+aiosqlite:///{dbfile}"
     monkeypatch.setenv("MIRZA_DATABASE_URL", url)
     monkeypatch.setenv("MIRZA_DOMAIN_HOSTS", "e2e.test")
+    # no bot token configured => token endpoint falls back to dev user_id mode
+    monkeypatch.setenv("MIRZA_API_KEY", "")
     subprocess.run(
         [str(ROOT / ".venv/bin/alembic"), "upgrade", "head"],
         cwd=str(ROOT), env=dict(os.environ, MIRZA_DATABASE_URL=url),
