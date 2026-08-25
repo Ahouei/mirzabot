@@ -37,6 +37,7 @@ async def client(tmp_path):
 
     from aiohttp import CookieJar
     from aiohttp.test_utils import TestClient, TestServer
+
     from mirza.api import make_app
     client = TestClient(TestServer(make_app()),
                         cookie_jar=CookieJar(unsafe=True))
@@ -74,6 +75,7 @@ async def test_settings_requires_auth(client):
 
 async def test_settings_split_setting_vs_paysetting(client):
     from sqlalchemy import select as sa_select
+
     from mirza.db import get_sessionmaker
     from mirza.models import PaySetting, Setting
 
