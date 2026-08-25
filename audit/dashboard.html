@@ -104,8 +104,8 @@ header.top p{margin:.4rem 0 0;color:var(--ink-2);max-width:56ch;font-size:.95rem
 .risks{display:flex;flex-direction:column;gap:.7rem}
 .risk-item{display:grid;grid-template-columns:auto 1fr;gap:.8rem;padding:.75rem .85rem;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--sev)}
 .risk-item .sev{--sev:var(--miss);align-self:start;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.2rem .45rem;border-radius:5px;color:#fff;white-space:nowrap}
-.sev-crit{background:var(--bug)}.sev-high{background:var(--warn)}
-.risk-item.c{border-left-color:var(--bug)}.risk-item.h{border-left-color:var(--warn)}
+.sev-crit{background:var(--bug)}.sev-high{background:var(--warn)}.sev-done{background:var(--good)}
+.risk-item.c{border-left-color:var(--bug)}.risk-item.h{border-left-color:var(--warn)}.risk-item.d{border-left-color:var(--good)}
 .risk-item .body b{display:block;font-size:.9rem;margin-bottom:.15rem}
 .risk-item .body p{margin:0;font-size:.8rem;color:var(--ink-2)}
 .risk-item .body .id{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-3)}
@@ -133,9 +133,9 @@ header.top p{margin:.4rem 0 0;color:var(--ink-2);max-width:56ch;font-size:.95rem
       <p>Static-analysis audit of the <span class="mono">rewrite/python</span> branch against <span class="mono">main</span> (production PHP). Baseline = source of truth.</p>
     </div>
     <div class="meta">
-      <div>PASS <b>1 of 2</b> · static only</div>
-      <div>baseline <b>63.6k LOC PHP</b></div>
-      <div>rewrite <b>8.0k LOC logic</b></div>
+      <div>RE‑AUDIT <b>post tranche‑1</b> · static</div>
+      <div>rewrite head <b>c7e0fee</b></div>
+      <div>parity <b>55% → 64%</b></div>
       <div>features scored <b>96</b></div>
       <div>2026‑08‑25</div>
     </div>
@@ -151,20 +151,20 @@ header.top p{margin:.4rem 0 0;color:var(--ink-2);max-width:56ch;font-size:.95rem
             <circle id="gaugeArc" cx="75" cy="75" r="62" fill="none" stroke="var(--warn)" stroke-width="15" stroke-linecap="round"
                     stroke-dasharray="389.6" stroke-dashoffset="389.6"></circle>
           </svg>
-          <div class="val"><b class="tnum">55%</b><span>weighted parity</span></div>
+          <div class="val"><b class="tnum">64%</b><span>weighted parity</span></div>
         </div>
         <div class="hero-txt">
-          <p class="lead">A strong foundation that is not yet feature-complete — and is broken on the one path the product exists for: take money, deliver a config.</p>
-          <p>Surface coverage is ~55%, but it clusters in <b>read/display</b> paths. The transactional core carries the critical defects, so functional readiness is materially lower than the headline number.</p>
-          <span class="verdict">✗ Not ready to replace <span class="mono" style="margin-left:.2em">main</span></span>
+          <p class="lead">After tranche‑1, the money path works: a customer can pay via a gateway and receive their config, and wallet top‑ups credit instead of crashing.</p>
+          <p>Parity moved <b>55% → 64%</b>; the critical block went from <b>0/4</b> to <b>≈3.5/4</b>. Verified by re‑reading every fix in code. Two residuals remain and the revenue‑retention features (customer reminders, discounts, referrals) are still tranche‑2.</p>
+          <span class="verdict" style="background:var(--good-s);color:var(--good);border-color:color-mix(in srgb,var(--good) 30%,transparent)">✓ Tranche‑1 accepted · not yet production</span>
         </div>
       </div>
       <div class="kpis">
-        <div class="kpi k-done"><b class="tnum">27</b><span>✅ Done / improved</span></div>
-        <div class="kpi k-part"><b class="tnum">40</b><span>⚠️ Partial</span></div>
-        <div class="kpi k-bug"><b class="tnum">16</b><span>🐞 Wrong / buggy</span></div>
+        <div class="kpi k-done"><b class="tnum">37</b><span>✅ Done / improved</span></div>
+        <div class="kpi k-part"><b class="tnum">42</b><span>⚠️ Partial</span></div>
+        <div class="kpi k-bug"><b class="tnum">5</b><span>🐞 Wrong / buggy</span></div>
         <div class="kpi k-risk"><b class="tnum">3</b><span>🔒 Risky</span></div>
-        <div class="kpi k-miss"><b class="tnum">10</b><span>❌ Missing</span></div>
+        <div class="kpi k-miss"><b class="tnum">9</b><span>❌ Missing</span></div>
       </div>
     </section>
 
@@ -196,32 +196,32 @@ header.top p{margin:.4rem 0 0;color:var(--ink-2);max-width:56ch;font-size:.95rem
   </div>
 
   <div class="foot">
-    <b>Critical caveat:</b> three independent defects each break online payments — an undefined <span class="mono">settle_wallet_topup</span>, gateway purchases that never set <span class="mono">invoice_id</span> (so they mis-route to the broken top-up path), and settlement that never notifies the buyer. The test suite is green because it never exercises that branch. &nbsp;·&nbsp; <b>Scope:</b> static pass only — no code executed, no DB or panels contacted. Panel-adapter correctness and end-to-end payment flows are deferred to a dynamic pass.
+    <b>Re-audit (post tranche-1):</b> the three critical payment defects are fixed and now covered by genuine money-path tests — verified by re-reading every change in <span class="mono">rewrite/python@c7e0fee</span>. Two residuals remain: the wallet debit is not race-safe (<span class="mono">change()</span> is read-modify-write, not an atomic conditional decrement), and cubepay's <span class="mono">settle_tuple</span> path still doesn't notify the buyer or report. &nbsp;·&nbsp; <b>Scope:</b> static pass only — no code executed. Executing the 45-test suite, panel-adapter round-trips and end-to-end gateway flows remain for the dynamic pass.
   </div>
 </div>
 <div class="tt" id="tt"></div>
 
 <script>
 const STATUS=[
-  {k:"Done / improved",n:27,c:"var(--good)",ic:"✅"},
-  {k:"Partially done",n:40,c:"var(--warn)",ic:"⚠️"},
-  {k:"Done but buggy",n:16,c:"var(--bug)",ic:"🐞"},
+  {k:"Done / improved",n:37,c:"var(--good)",ic:"✅"},
+  {k:"Partially done",n:42,c:"var(--warn)",ic:"⚠️"},
+  {k:"Done but buggy",n:5,c:"var(--bug)",ic:"🐞"},
   {k:"Done but risky",n:3,c:"var(--risk)",ic:"🔒"},
-  {k:"Missing",n:10,c:"var(--miss)",ic:"❌"},
+  {k:"Missing",n:9,c:"var(--miss)",ic:"❌"},
 ];
 const TOTAL=STATUS.reduce((s,x)=>s+x.n,0);
 const AREAS=[
-  {a:"Web / HTTP",p:86},{a:"Support",p:75},{a:"Service mgmt",p:63},
-  {a:"Bot UX",p:60},{a:"Payments",p:56},{a:"Purchase",p:55},
-  {a:"Data / infra",p:55},{a:"Scheduled jobs",p:53},{a:"Agent",p:50},
-  {a:"Admin",p:41},{a:"Growth",p:31},
+  {a:"Web / HTTP",p:86},{a:"Payments",p:82},{a:"Support",p:75},
+  {a:"Service mgmt",p:72},{a:"Scheduled jobs",p:69},{a:"Purchase",p:67},
+  {a:"Bot UX",p:60},{a:"Data / infra",p:55},{a:"Agent",p:50},
+  {a:"Admin",p:48},{a:"Growth",p:43},
 ];
 const RISKS=[
-  {s:"crit",lv:"Critical",t:"Gateway settlement crashes",id:"F‑022 · F‑030",d:"PaymentService.settle_wallet_topup() is called in 4 places but defined nowhere — every gateway top-up and Telegram Stars settlement raises AttributeError."},
-  {s:"crit",lv:"Critical",t:"Paid products are never provisioned",id:"F‑006",d:"buy.py creates the order with no invoice_id, so a product paid via any online gateway is treated as a wallet top-up — no config is delivered."},
-  {s:"crit",lv:"Critical",t:"Buyer & admin never notified on payment",id:"F‑032 · F‑033",d:"_notify_user is hard-coded to bot=None and the admin payment report is a no-op placeholder. Successful payments are silent."},
-  {s:"high",lv:"High",t:"Admin panel a fraction of parity",id:"§4.8",d:"~25 create-and-list commands vs ~177 branches. No multi-admin, no in-bot text customization, no per-panel pricing/inbound editing."},
-  {s:"high",lv:"High",t:"Migrations are a create_all shim",id:"F‑094 · F‑093",d:"The initial migration loops model metadata instead of real DDL, carries dead code, and ships no compatibility view for the redesigned settings table."},
+  {s:"high",lv:"High",t:"Wallet debit is not race-safe",id:"C4 · F‑005",d:"Charge-before-provision is fixed, but WalletService.change is read-modify-write (no row lock / atomic UPDATE) — two concurrent wallet buys can still double-spend on PostgreSQL."},
+  {s:"high",lv:"High",t:"Expiry reminders miss the customer",id:"F‑076 · F‑077",d:"Renewal/volume warnings still post to an admin channel, not the buyer — the renewal engine never reaches paying users (tranche-2)."},
+  {s:"high",lv:"High",t:"Migrations still a create_all shim",id:"F‑094",d:"Initial migration loops model metadata instead of real DDL; no compatibility view for the redesigned settings table (tranche-2)."},
+  {s:"high",lv:"High",t:"Admin surface still a fraction",id:"M9",d:"~25 commands vs ~177; in-bot text customization and per-panel/product editing still absent — the largest remaining block."},
+  {s:"done",lv:"Resolved",t:"Gateway settlement (was critical)",id:"C1·C2·C3",d:"RESOLVED in tranche-1: settle_wallet_topup restored, gateway purchases set invoice_id, buyer/admin notified for 5 gateways (cubepay notify still open)."},
 ];
 
 // stacked bar
@@ -255,22 +255,22 @@ AREAS.forEach(a=>{
 // risks
 const rk=document.getElementById("risks");
 RISKS.forEach(r=>{
-  const el=document.createElement("div");el.className="risk-item "+(r.s==="crit"?"c":"h");
+  const el=document.createElement("div");el.className="risk-item "+(r.s==="crit"?"c":r.s==="done"?"d":"h");
   el.innerHTML=`<span class="sev sev-${r.s}">${r.lv}</span>
     <div class="body"><b>${r.t}</b><p>${r.d}</p><span class="id">${r.id}</span></div>`;
   rk.appendChild(el);
 });
 // matrix — per-area status mix
 const MX=[
-  {a:"Purchase & provisioning",p:55,mix:[3,3,3,0,1]},
-  {a:"Service management",p:63,mix:[3,5,1,0,0]},
-  {a:"Payments & wallet",p:56,mix:[4,6,4,0,0]},
+  {a:"Purchase & provisioning",p:67,mix:[5,3,1,1,1]},
+  {a:"Service management",p:72,mix:[4,5,0,0,0]},
+  {a:"Payments & wallet",p:82,mix:[8,5,0,1,0]},
   {a:"Bot UX & onboarding",p:60,mix:[3,2,1,1,1]},
-  {a:"Growth & marketing",p:31,mix:[1,2,1,0,3]},
+  {a:"Growth & marketing",p:43,mix:[2,2,0,0,3]},
   {a:"Agent / reseller",p:50,mix:[1,3,0,0,1]},
   {a:"Support & content",p:75,mix:[2,2,0,0,0]},
-  {a:"Admin management",p:41,mix:[2,10,2,0,4]},
-  {a:"Scheduled jobs",p:53,mix:[3,3,4,0,0]},
+  {a:"Admin management",p:48,mix:[3,11,1,0,3]},
+  {a:"Scheduled jobs",p:69,mix:[5,3,2,0,0]},
   {a:"Web / HTTP surfaces",p:86,mix:[5,2,0,0,0]},
   {a:"Data & infrastructure",p:55,mix:[1,2,1,1,0]},
 ];
@@ -288,7 +288,7 @@ MX.forEach(m=>{
 // gauge animate
 requestAnimationFrame(()=>{
   const arc=document.getElementById("gaugeArc");
-  const C=2*Math.PI*62, pct=0.55;
+  const C=2*Math.PI*62, pct=0.64;
   arc.style.transition="stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)";
   arc.style.strokeDashoffset=C*(1-pct);
 });
