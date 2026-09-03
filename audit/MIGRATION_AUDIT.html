@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mirza Rewrite Audit Report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#eef1f5; --paper:#ffffff; --panel-2:#f5f7fb; --line:#dce2ec; --line-2:#e7ebf2;
+  --ink:#1a212b; --ink-2:#455060; --ink-3:#77839a;
+  --accent:#3a5bd9; --accent-2:#2a46b8; --accent-soft:#e6eafb;
+  --good:#2f9e6b; --warn:#c9821f; --bug:#cf4457; --risk:#7d54c9; --miss:#748196; --improve:#1f8a8a;
+  --good-s:#e4f2ea; --warn-s:#f7ecd7; --bug-s:#f9e2e6; --risk-s:#efe7f9; --miss-s:#eaeef3; --improve-s:#dff0f0;
+  --shadow:0 1px 2px rgba(20,30,50,.05),0 8px 26px rgba(20,30,50,.07);
+  --radius:13px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1015; --paper:#151a21; --panel-2:#1a2029; --line:#28303c; --line-2:#222a34;
+    --ink:#e9edf3; --ink-2:#a9b5c5; --ink-3:#76839a;
+    --accent:#8098ff; --accent-2:#93a7ff; --accent-soft:#1d2740;
+    --good:#43c088; --warn:#e0a144; --bug:#e56a7b; --risk:#a985e8; --miss:#8895aa; --improve:#3bb6b6;
+    --good-s:#132a20; --warn-s:#2b2312; --bug-s:#2c1519; --risk-s:#1f1830; --miss-s:#1a2029; --improve-s:#0f2626;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1015; --paper:#151a21; --panel-2:#1a2029; --line:#28303c; --line-2:#222a34;
+  --ink:#e9edf3; --ink-2:#a9b5c5; --ink-3:#76839a;
+  --accent:#8098ff; --accent-2:#93a7ff; --accent-soft:#1d2740;
+  --good:#43c088; --warn:#e0a144; --bug:#e56a7b; --risk:#a985e8; --miss:#8895aa; --improve:#3bb6b6;
+  --good-s:#132a20; --warn-s:#2b2312; --bug-s:#2c1519; --risk-s:#1f1830; --miss-s:#1a2029; --improve-s:#0f2626;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--panel-2);border:1px solid var(--line-2);border-radius:5px;padding:.05em .38em;color:var(--accent-2)}
+.tnum{font-variant-numeric:tabular-nums}
+
+.shell{max-width:1220px;margin:0 auto;padding:clamp(1rem,3vw,2.5rem);display:grid;grid-template-columns:1fr;gap:2rem}
+@media(min-width:1000px){.shell{grid-template-columns:210px minmax(0,1fr);align-items:start}}
+
+/* TOC */
+nav.toc{display:none}
+@media(min-width:1000px){
+  nav.toc{display:block;position:sticky;top:1.5rem;font-size:.83rem}
+  nav.toc .lab{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.7rem}
+  nav.toc a{display:block;color:var(--ink-2);text-decoration:none;padding:.28rem 0 .28rem .7rem;border-left:2px solid var(--line);transition:.15s}
+  nav.toc a:hover{color:var(--accent);border-left-color:var(--accent)}
+}
+
+main{min-width:0}
+.doc-head{border-bottom:1px solid var(--line);padding-bottom:1.6rem;margin-bottom:2rem}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:"IBM Plex Sans";font-weight:600;font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.08;margin:.5rem 0 .3rem;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--ink-2);font-size:1rem;max-width:60ch}
+.factbar{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.3rem}
+.fact{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.5rem .75rem;font-size:.78rem;box-shadow:var(--shadow)}
+.fact b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:600;display:block;font-size:.95rem;margin-top:.1rem}
+.fact span{color:var(--ink-3);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
+
+section{margin-bottom:2.6rem;scroll-margin-top:1.5rem}
+h2{font-family:"IBM Plex Sans";font-weight:600;font-size:1.4rem;letter-spacing:-.01em;margin:0 0 1rem;padding-top:.4rem;display:flex;align-items:baseline;gap:.6rem;text-wrap:balance}
+h2 .num{font-family:"IBM Plex Mono",monospace;font-size:.9rem;color:var(--accent);font-weight:600}
+h3{font-family:"IBM Plex Sans";font-weight:600;font-size:1rem;margin:1.6rem 0 .6rem;color:var(--ink)}
+.prose p{font-family:"Newsreader",Georgia,serif;font-size:1.08rem;line-height:1.68;color:var(--ink);max-width:68ch;margin:0 0 1rem}
+.prose p .em{font-style:italic}
+.prose strong{font-weight:600;font-family:"IBM Plex Sans"}
+
+/* callout */
+.callout{border-radius:var(--radius);padding:1.1rem 1.25rem;margin:1.3rem 0;border:1px solid var(--line);background:var(--paper);box-shadow:var(--shadow);border-left:4px solid var(--accent)}
+.callout.warn{border-left-color:var(--bug);background:var(--bug-s)}
+.callout.risk{border-left-color:var(--warn);background:var(--warn-s)}
+.callout h4{margin:0 0 .4rem;font-size:.82rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);font-family:"IBM Plex Sans";font-weight:600}
+.callout p{margin:0;font-size:.95rem;color:var(--ink)}
+.callout.warn p, .callout.risk p{color:var(--ink)}
+
+/* verdict band */
+.verdict-band{display:grid;grid-template-columns:auto 1fr;gap:1.2rem;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:1.3rem 1.4rem;box-shadow:var(--shadow);margin:1.4rem 0}
+.big-pct{font-family:"IBM Plex Mono",monospace;font-size:2.6rem;font-weight:600;line-height:1;color:var(--warn);letter-spacing:-.02em}
+.big-pct small{display:block;font-family:"IBM Plex Sans";font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:.35rem;font-weight:600}
+.verdict-band .tag{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .65rem;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--bug-s);color:var(--bug);border:1px solid color-mix(in srgb,var(--bug) 30%,transparent)}
+.verdict-band .vt{color:var(--ink-2);font-size:.92rem;margin-top:.5rem}
+
+/* status chip */
+.st{display:inline-flex;align-items:center;gap:.32rem;font-family:"IBM Plex Sans";font-weight:600;font-size:.74rem;padding:.15rem .5rem;border-radius:6px;white-space:nowrap;border:1px solid transparent}
+.st-done{background:var(--good-s);color:var(--good);border-color:color-mix(in srgb,var(--good) 25%,transparent)}
+.st-imp{background:var(--improve-s);color:var(--improve);border-color:color-mix(in srgb,var(--improve) 25%,transparent)}
+.st-part{background:var(--warn-s);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 28%,transparent)}
+.st-bug{background:var(--bug-s);color:var(--bug);border-color:color-mix(in srgb,var(--bug) 28%,transparent)}
+.st-risk{background:var(--risk-s);color:var(--risk);border-color:color-mix(in srgb,var(--risk) 28%,transparent)}
+.st-miss{background:var(--miss-s);color:var(--miss);border-color:color-mix(in srgb,var(--miss) 30%,transparent)}
+
+/* legend row */
+.legend-strip{display:flex;flex-wrap:wrap;gap:.55rem;margin:0 0 1.2rem}
+
+/* tables */
+.tbl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin:.4rem 0 1rem}
+table{width:100%;border-collapse:collapse;font-size:.86rem;background:var(--paper);min-width:640px}
+caption{caption-side:top;text-align:left;font-weight:600;font-size:.95rem;padding:.7rem .9rem .1rem;color:var(--ink)}
+th,td{padding:.55rem .8rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-2)}
+thead th{background:var(--panel-2);font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:600;position:sticky;top:0}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--panel-2)}
+td.id{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink-3);white-space:nowrap;font-weight:500}
+td.feat{font-weight:600;color:var(--ink);min-width:9rem}
+td.stcell{white-space:nowrap}
+td.note{color:var(--ink-2);font-size:.83rem;min-width:16rem}
+td.note code{font-size:.8em}
+
+/* stat cards for §6 */
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin:1rem 0}
+.statcard{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:.85rem .95rem;box-shadow:var(--shadow);border-top:3px solid var(--ac,var(--accent))}
+.statcard b{font-family:"IBM Plex Mono",monospace;font-size:1.7rem;font-weight:600;display:block;line-height:1;letter-spacing:-.02em}
+.statcard span{font-size:.76rem;color:var(--ink-3);display:block;margin-top:.4rem}
+.statcard .pc{font-size:.74rem;color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+
+/* severity list */
+.sev-group{margin:1rem 0}
+.sev-h{display:inline-flex;align-items:center;gap:.5rem;font-weight:600;font-size:.9rem;margin:1.2rem 0 .5rem}
+.sev-dot{width:11px;height:11px;border-radius:3px}
+ol.findings{list-style:none;counter-reset:f;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem}
+ol.findings li{counter-increment:f;position:relative;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem .7rem 2.7rem;font-size:.9rem;box-shadow:var(--shadow)}
+ol.findings li::before{content:counter(f);position:absolute;left:.7rem;top:.7rem;font-family:"IBM Plex Mono",monospace;font-size:.78rem;font-weight:600;color:var(--ink-3);width:1.5rem;text-align:center}
+ol.findings li b{font-weight:600}
+ol.findings li .refs{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-3);margin-left:.3rem}
+
+/* steps */
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:1rem 0;display:flex;flex-direction:column;gap:.55rem}
+ol.steps li{counter-increment:s;position:relative;padding:.6rem .9rem .6rem 3rem;background:var(--paper);border:1px solid var(--line);border-radius:10px;font-size:.92rem;box-shadow:var(--shadow)}
+ol.steps li::before{content:counter(s);position:absolute;left:.75rem;top:50%;transform:translateY(-50%);width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent);color:#fff;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+ul.plain{margin:.6rem 0;padding-left:1.2rem}
+ul.plain li{margin:.35rem 0;font-size:.92rem;color:var(--ink-2)}
+ul.plain li b{color:var(--ink)}
+
+.tier{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:.15rem .5rem;border-radius:5px}
+.tier.must{background:var(--bug-s);color:var(--bug)}
+.tier.reach{background:var(--warn-s);color:var(--warn)}
+
+footer{border-top:1px solid var(--line);margin-top:1rem;padding-top:1.3rem;color:var(--ink-3);font-size:.8rem;line-height:1.7}
+a.inl{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+a.inl:hover{color:var(--accent-2)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <div class="lab">Contents</div>
+    <a href="#summary">Executive summary</a>
+    <a href="#method">How it was done</a>
+    <a href="#parity">Parity inventory</a>
+    <a href="#additions">Additions</a>
+    <a href="#arch">Architecture</a>
+    <a href="#quality">Quality &amp; QA</a>
+    <a href="#completion">Completion &amp; math</a>
+    <a href="#next">Next steps</a>
+    <a href="#dynamic">Dynamic-pass gaps</a>
+    <a href="#coverage">Coverage</a>
+  </nav>
+
+  <main>
+    <div class="doc-head">
+      <div class="eyebrow">Repository Migration Audit · Static Pass 1 of 2</div>
+      <h1>Mirza Bot: PHP → Python rewrite parity audit</h1>
+      <p class="sub">An independent, static-only review of the <span class="mono">rewrite/python</span> branch against production <span class="mono">main</span>, treating every behaviour in <span class="mono">main</span> as a requirement.</p>
+      <div class="factbar">
+        <div class="fact"><span>Baseline</span><b>63.6k LOC</b></div>
+        <div class="fact"><span>Rewrite logic</span><b>8.0k LOC</b></div>
+        <div class="fact"><span>Features scored</span><b>96</b></div>
+        <div class="fact"><span>Weighted parity</span><b>≈ 55%</b></div>
+        <div class="fact"><span>Critical defects</span><b>4</b></div>
+        <div class="fact"><span>Date</span><b>2026‑08‑25</b></div>
+      </div>
+    </div>
+
+    <section id="summary">
+      <h2><span class="num">01</span> Executive summary</h2>
+      <div class="prose">
+        <p>The rewrite is a <strong>well-structured, genuinely more maintainable skeleton that is not yet feature-complete — and, critically, is broken on the one path the whole product exists for: taking money and delivering a config.</strong> Architecturally it is a real step up from the PHP monolith: a plugin registry for panels, payments and jobs; an ORM with real foreign keys and indexes; JSONB settings; Fernet-encrypted panel passwords; idempotent payment claiming; and proper Telegram Mini-App signature validation. As <span class="em">a foundation to build on</span>, it succeeds.</p>
+        <p>Measured against the actual instruction — <strong>full feature parity with <span class="mono">main</span></strong> — it is roughly half-done, and the missing half includes the revenue path. Three independent defects each break online payments on their own:</p>
+      </div>
+      <div class="tbl-scroll" style="margin-top:.6rem">
+        <table>
+          <tbody>
+            <tr><td class="id">#1</td><td><code>PaymentService.settle_wallet_topup(…)</code> is called in four places but <b>defined nowhere</b>. Every wallet top-up settlement — Zarinpal, IranPay, Plisio, NowPayments, card-to-card, Telegram Stars — raises <code>AttributeError</code> at runtime.</td></tr>
+            <tr><td class="id">#2</td><td>Paying for a <b>product</b> through any online gateway <b>never provisions it</b>. The bot checkout creates the order with no <code>invoice_id</code>, so settlement treats the purchase as a wallet top-up (which then hits #1).</td></tr>
+            <tr><td class="id">#3</td><td>The customer is <b>never notified</b> when a gateway payment settles (<code>_notify_user(None, …)</code>) and the admin payment report is a <b>no-op placeholder</b>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prose">
+        <p>The single biggest risk is therefore not "some features are missing." It is that <strong>the money path looks finished</strong> — there are gateway modules, a passing test suite, and a self-authored <span class="mono">PARITY.md</span> claiming ✅ almost everywhere — <strong>yet it does not work end-to-end, and the tests are green because they never exercise the broken branch.</strong> Anyone trusting the self-reported matrix would ship a bot that accepts payment and hands out nothing.</p>
+        <p>Beyond payments, the admin surface is a fraction of the original (~25 mostly create-and-list commands versus ~177 branches in <span class="mono">admin.php</span>; no multi-admin support, no in-bot text customization, no per-panel pricing or inbound editing). Several scheduled jobs are stubs or point at the wrong destination — expiry reminders go to an admin channel instead of the customer, the lottery job is absent, and the gift job is literally <code>return None</code>. A number of admin-configurable settings are written but never read (lucky-wheel prizes, gift-code percentages).</p>
+      </div>
+      <div class="verdict-band">
+        <div class="big-pct">55%<small>weighted parity</small></div>
+        <div>
+          <span class="tag">✗ Not ready to replace <span class="mono">main</span></span>
+          <div class="vt"><strong>Far off</strong> as a drop-in replacement; <strong>close</strong> as an architectural foundation. Completion clusters in read/display paths, so functional readiness of the purchase flow is materially lower than 55%. Do not cut over until the §8 must-fix list is cleared and a dynamic pass confirms provisioning against real panels.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="method">
+      <h2><span class="num">02</span> How this pass was conducted</h2>
+      <ul class="plain">
+        <li>Both branches read directly from git worktrees; <b>no code executed</b>, no dependencies installed, no PostgreSQL or panels contacted.</li>
+        <li><b>Breadth-first, risk-weighted:</b> every functional area inventoried and mapped; deep line-level scrutiny concentrated on the money path, scheduled jobs, auth, and the data model.</li>
+        <li>The rewrite's own <span class="mono">PARITY.md</span> was treated as <b>a claim to verify, not evidence</b> — several of its ✅ entries are contradicted by the code and are called out inline.</li>
+        <li>Where a conclusion is inferred rather than proven by reading, it is labelled as such. The honest depth boundary is stated in §10.</li>
+      </ul>
+    </section>
+
+    <section id="parity">
+      <h2><span class="num">03</span> Feature parity inventory</h2>
+      <div class="legend-strip">
+        <span class="st st-done">✅ Done</span>
+        <span class="st st-imp">🔧 Improved</span>
+        <span class="st st-part">⚠️ Partial</span>
+        <span class="st st-bug">🐞 Buggy / wrong</span>
+        <span class="st st-risk">🔒 Risky</span>
+        <span class="st st-miss">❌ Missing</span>
+      </div>
+      <div id="paritytables"></div>
+    </section>
+
+    <section id="additions">
+      <h2><span class="num">04</span> Additions in the rewrite <span class="st st-imp" style="font-size:.7rem">➕</span></h2>
+      <div class="prose"><p>Genuinely useful and mostly aligned with the "improve where reasonable / design for extension" instruction. Crucially, these are <strong>labelled</strong> in <span class="mono">PARITY.md</span> rather than silently mixed into parity work — that instruction was followed. The problem is the false ✅ parity claims sitting beside them.</p></div>
+      <ul class="plain">
+        <li><b>Plugin registry</b> for panels, payments and jobs (<code>@register_plugin</code>) with runtime enable/disable — the main extensibility win.</li>
+        <li><b>Append-only balance ledger</b> — auditable wallet.</li>
+        <li><b>Idempotent payment claiming</b> (<code>claim_paid</code>) — correct concurrency guard (undermined in practice by the settle bug).</li>
+        <li><b>Webhook secret validation</b> — closes a real <span class="mono">main</span> gap (fails open if unset).</li>
+        <li><b>Fernet encryption of panel passwords at rest</b> (weak-default-key caveat).</li>
+        <li><b>JSONB settings, real FKs and indexes</b> on the invoice/payment hot paths.</li>
+        <li><b>Proper Telegram <code>initData</code> HMAC validation</b> for the Mini-App — stronger than <span class="mono">main</span>.</li>
+        <li><b>Batched / rate-capped</b> broadcast and payment polling.</li>
+      </ul>
+    </section>
+
+    <section id="arch">
+      <h2><span class="num">05</span> Architecture &amp; extensibility</h2>
+      <div class="prose">
+        <p>This is the rewrite's strongest dimension, and the instruction to "design for future add-ons" was taken seriously rather than producing a literal transliteration. Concretely:</p>
+      </div>
+      <ul class="plain">
+        <li><b>Clean module boundaries:</b> <code>handlers/</code> (bot), <code>panels/</code> (provisioning adapters), <code>payments/</code> (gateways), <code>jobs/</code> (scheduler), <code>api/</code> (HTTP), <code>models/</code>, <code>i18n/</code>. This is a real separation the PHP monolith (a 10.9k-line <span class="mono">admin.php</span>, a 6.7k-line <span class="mono">index.php</span>) never had.</li>
+        <li><b>A genuine plugin system:</b> <code>registry/</code> plus a <code>contracts.py</code> defining <code>PanelAdapter</code>, <code>PanelResult</code> and <code>Job</code> interfaces. Adding a panel or gateway is a new class with a decorator — the correct extension seam, and the clearest evidence this is designed to grow.</li>
+        <li><b>Config-driven where it counts:</b> a settings KV store and per-panel columns replace scattered PHP constants; the scheduler is toggleable like the legacy <code>status_cron</code>.</li>
+      </ul>
+      <div class="prose">
+        <p>The extensibility is undercut in three places where the design reverts to hardcoding: <strong>process-local dictionaries</strong> for purchase, top-up, broadcast and web-session state (breaks multi-worker and restarts); <strong>single-admin gating</strong> that ignores the <code>Admin</code>/<code>rule</code> tables; and <strong>hardcoded values</strong> that shadow admin config (wheel prizes, trial limits). The bones are extensible; several muscles are still nailed in place.</p>
+      </div>
+    </section>
+
+    <section id="quality">
+      <h2><span class="num">06</span> Code quality &amp; QA findings</h2>
+      <div class="sev-group">
+        <div class="sev-h"><span class="sev-dot" style="background:var(--bug)"></span>Critical — blocks launch</div>
+        <ol class="findings">
+          <li><b>Undefined <code>settle_wallet_topup</code></b> — every gateway top-up and Stars settlement crashes.<span class="refs">F‑022 · F‑030</span></li>
+          <li><b>Gateway product purchase never provisions</b> — missing <code>invoice_id</code> mis-routes real purchases to the broken top-up branch.<span class="refs">F‑006</span></li>
+          <li><b>Buyer never notified &amp; admin report is a no-op</b> on settlement.<span class="refs">F‑032 · F‑033</span></li>
+          <li><b>Wallet purchase provisions &amp; commits the invoice before charging</b> — a failed charge only rolls back an already-committed session → free config; TOCTOU double-spend.<span class="refs">F‑005</span></li>
+        </ol>
+      </div>
+      <div class="sev-group">
+        <div class="sev-h"><span class="sev-dot" style="background:var(--warn)"></span>High</div>
+        <ol class="findings">
+          <li><b>Change-location &amp; manual-sell create zero-volume / expired configs.</b><span class="refs">F‑016 · F‑066</span></li>
+          <li><b>Expiry &amp; volume reminders go to an admin channel, not the customer</b> — the renewal engine never reaches buyers.<span class="refs">F‑076 · F‑077</span></li>
+          <li><b><code>disableconfig</code> never commits</b> its status change; re-runs every tick.<span class="refs">F‑078</span></li>
+          <li><b>Multiple-admins unimplemented</b> despite a ✅ claim; secondary admins are locked out.<span class="refs">F‑068</span></li>
+          <li><b>Migrations are <code>create_all</code> in disguise</b> with dead code and no compatibility view for the redesigned settings table.<span class="refs">F‑094 · F‑093</span></li>
+          <li><b>Process-local state</b> breaks restarts and any multi-worker deployment; enables the F‑005 race.<span class="refs">F‑041</span></li>
+        </ol>
+      </div>
+      <div class="sev-group">
+        <div class="sev-h"><span class="sev-dot" style="background:var(--risk)"></span>Medium</div>
+        <ul class="plain">
+          <li>Discount engine ignores percentages, usage limits, per-product codes and expiry.<span class="refs mono"> F‑007 · F‑045</span></li>
+          <li>Lucky-wheel &amp; gift-code admin config written but never read.<span class="refs mono"> F‑048 · F‑075 · F‑046</span></li>
+          <li>Lottery job and scheduled gift drops absent / stubbed.<span class="refs mono"> F‑047</span></li>
+          <li><code>uptime_node</code> uses the encrypted password without decrypting.<span class="refs mono"> F‑082</span></li>
+          <li>Referral commission &amp; cashback not implemented.<span class="refs mono"> F‑043 · F‑044</span></li>
+          <li>Admin surface ~25 commands vs ~177; no in-bot text customization; pipe-delimited CLI args replace interactive flows.</li>
+          <li><code>service_time</code> stores an absolute timestamp in some paths and a day-count in others → on-hold / extend math bugs.<span class="refs mono"> F‑080 · F‑013</span></li>
+        </ul>
+      </div>
+      <div class="sev-group">
+        <div class="sev-h"><span class="sev-dot" style="background:var(--miss)"></span>Low / hygiene &amp; testing</div>
+        <ul class="plain">
+          <li><b>Dead / placeholder code (AI-generation tells):</b> a shadowed <span class="em">insecure</span> duplicate <code>miniapp</code> in <code>api/__init__.py</code> (its token action trusts a client <code>user_id</code>); <code>payhooks._report</code>; <code>service._expire_from</code>; the migration <code>col_defs</code> loop; <code>r = web.Application()  # placeholder to keep linters calm</code>; <code>_TOPUP_UNUSED</code>; <code>new_tracking_code</code>.</li>
+          <li>Web panel: no <code>Secure</code> cookie flag; inconsistent HTML-escaping; a bcrypt timing-parity "dummy hash" that is invalid and raises. <b>SQL is parameterized via the ORM — no injection found.</b></li>
+          <li>Webhook secret and forced-channel checks <b>fail open</b> when misconfigured. Weak default <code>MIRZA_SESSION_SECRET=change-me</code> doubles as the panel-password encryption key.</li>
+          <li><b>Testing:</b> 38 test functions, strong on <code>initData</code>, CubePay/Stars math and idempotency — but <b>no test exercises the settle-topup or bot checkout path</b>, which is exactly why the suite is green while the money path is broken. Components are validated in isolation; the end-to-end purchase journey is never assembled.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="completion">
+      <h2><span class="num">07</span> Completion &amp; how it was calculated</h2>
+      <div class="prose"><p>Each of 96 parity features is scored by fidelity to baseline (Done/Improved = 1.0, Risky = 0.7, Partial = 0.5, Buggy = 0.2, Missing = 0.0) and averaged. Additions are excluded from the denominator.</p></div>
+      <div class="statgrid">
+        <div class="statcard" style="--ac:var(--good)"><b style="color:var(--good)" class="tnum">27</b><span>✅🔧 Done / improved</span><span class="pc">28%</span></div>
+        <div class="statcard" style="--ac:var(--warn)"><b style="color:var(--warn)" class="tnum">40</b><span>⚠️ Partially done</span><span class="pc">42%</span></div>
+        <div class="statcard" style="--ac:var(--bug)"><b style="color:var(--bug)" class="tnum">16</b><span>🐞 Done but buggy</span><span class="pc">17%</span></div>
+        <div class="statcard" style="--ac:var(--risk)"><b style="color:var(--risk)" class="tnum">3</b><span>🔒 Done but risky</span><span class="pc">3%</span></div>
+        <div class="statcard" style="--ac:var(--miss)"><b style="color:var(--miss)" class="tnum">10</b><span>❌ Missing</span><span class="pc">10%</span></div>
+      </div>
+      <div class="callout warn">
+        <h4>Read the number carefully</h4>
+        <p>Completion is concentrated in read/display paths (viewing services, stats, listings, the Mini-App). The transactional core — take payment → provision → notify — is where the buggy cluster sits. A user-journey-weighted score would land well below 55%. Treat 55% as "how much of the surface area is present," not "how ready it is to run a shop."</p>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <caption>Weighted completion by functional area</caption>
+          <thead><tr><th>Area</th><th>Completion</th><th>Reading</th></tr></thead>
+          <tbody id="areaRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2><span class="num">08</span> Recommended next steps</h2>
+      <p style="margin:.2rem 0 .8rem"><span class="tier must">Must fix before replacing main</span> &nbsp; <span style="color:var(--ink-2);font-size:.9rem">— the "make the core actually work" tranche (1–7); land together with an end-to-end test.</span></p>
+      <ol class="steps">
+        <li>Define <code>PaymentService.settle_wallet_topup(order, cashback_pct=0)</code> and cover it with a settlement test — unblocks all gateway top-ups + Stars.</li>
+        <li>Set <code>invoice_id</code> on gateway product orders in <code>buy.py::pay_gateway</code> so purchases provision instead of top up.</li>
+        <li>Wire a real bot into <code>payhooks</code> settlement — implement buyer DM and the admin report.</li>
+        <li>Fix wallet-purchase ordering: charge → provision in one transaction; re-verify balance atomically.</li>
+        <li>Fix change-location and manual-sell to carry real volume / expiry.</li>
+        <li>Point expiry &amp; volume reminders at the customer; commit <code>disableconfig</code>.</li>
+        <li>Move ephemeral state to the DB / Redis (aiogram FSM) — removes the race and multi-worker breakage.</li>
+      </ol>
+      <p style="margin:1.2rem 0 .8rem"><span class="tier reach">Reach real parity</span> &nbsp; <span style="color:var(--ink-2);font-size:.9rem">— the second tranche (8–14).</span></p>
+      <ol class="steps" start="8" style="counter-reset:s 7">
+        <li>Restore money-adjacent admin parity: multi-admin gating, per-panel pricing/inbound/test config, product edit/delete, discount %/limits, card-number management, in-bot text customization.</li>
+        <li>Rewrite the discount engine (percent + fixed + per-product + usage-limit + expiry) and increment <code>used_count</code>.</li>
+        <li>Real migrations: replace the <code>create_all</code> shim with explicit DDL, and ship the compatibility view the settings redesign depends on.</li>
+        <li>Port the lottery job; implement gift drops; connect <code>/wheelprizes</code> to the wheel.</li>
+        <li>Referral commission &amp; cashback; phone-verification enforcement; the on-hold creation path.</li>
+        <li>Harden config: require non-default secrets at boot; separate the encryption key from the session secret; add <code>Secure</code> cookies and consistent escaping.</li>
+        <li>Add end-to-end tests for the full purchase journey per gateway before re-claiming parity.</li>
+      </ol>
+    </section>
+
+    <section id="dynamic">
+      <h2><span class="num">09</span> What could not be verified statically</h2>
+      <div class="prose"><p>Deferred to the second (live-run) pass:</p></div>
+      <ul class="plain">
+        <li><b>Panel adapters against real panels.</b> Only <code>marzban.py</code> was deep-read (looks faithful). Marzneshin, Alireza/x-ui, S-UI, Hiddify, WGDashboard (keygen), MikroTik (REST v7), IBSng, Pasarguard, Rebecca and mirza_agent need live create/modify/remove/revoke round-trips.</li>
+        <li><b>The end-to-end purchase → payment → provision → notify flow</b> per gateway — confirm the §6 crashes and the top-up mis-route on a running instance.</li>
+        <li><b>Alembic <code>upgrade</code>/<code>downgrade</code></b> against real PostgreSQL (JSONB, FKs, the missing compat view, the absent <code>protocol</code> table).</li>
+        <li><b>Gateway callback signatures</b> against live sandboxes (Zarinpal v4, Aqayepardakht code-70, Plisio/NowPayments webhooks, IranPay poll, CubePay HMAC).</li>
+        <li><b>The Mini-App inside Telegram</b> (real <code>initData</code>, token exchange, purchase actions), <b>scheduled jobs</b> on the real scheduler, <b>white-label</b> child-bot dispatch, and the <b>installer</b> on a clean host.</li>
+      </ul>
+    </section>
+
+    <section id="coverage">
+      <h2><span class="num">10</span> Coverage statement</h2>
+      <div class="prose">
+        <p><strong>Fully read &amp; reasoned about:</strong> data model &amp; migration; bot purchase flow; <code>panels/service.py</code>; <code>payments/service.py</code>; payment webhooks; wallet; middleware; webhook entry; admin handlers; all scheduled jobs; web panel; REST + Mini-App API; user misc/menu; <code>marzban.py</code>.</p>
+        <p><strong>Read lightly / trusted pending dynamic verification:</strong> individual gateway internals, <code>extra.py</code>, <code>services.py</code> detail, <code>whitelabel.py</code>, <code>backup.py</code>, <code>rates.py</code>, and 13 of the 14 panel adapters.</p>
+        <p>This is a complete <strong>breadth-first</strong> pass — every functional area inventoried and mapped, with deep scrutiny on the risk-weighted core. It is <span class="em">not</span> a line-by-line audit of all 89 rewrite and 97 baseline files; the areas above are the known depth boundary, and no partial result is presented as exhaustive.</p>
+      </div>
+    </section>
+
+    <footer>
+      Mirza Bot migration audit · static analysis pass 1 of 2 · generated 2026‑08‑25. Baseline <span class="mono">origin/main</span> (PHP 8.2 / MySQL) treated as source of truth; rewrite <span class="mono">origin/rewrite/python</span> (aiogram / SQLAlchemy / aiohttp / PostgreSQL). Feature IDs <span class="mono">F‑001…F‑096</span> are stable references into the parity inventory. A companion PMO dashboard summarizes these figures visually.
+    </footer>
+  </main>
+</div>
+
+<script>
+const F=(id,feat,main,st,note)=>({id,feat,main,st,note});
+const S={done:["st-done","✅"],imp:["st-imp","🔧"],part:["st-part","⚠️"],bug:["st-bug","🐞"],risk:["st-risk","🔒"],miss:["st-miss","❌"]};
+const GROUPS=[
+ ["4.1 · Purchase &amp; provisioning",[
+  F("F‑001","Category browsing","Category → product drill-down","done","buy.py"),
+  F("F‑002","Product listing / selection","Filtered by category / location","done","buy.py, mini_services"),
+  F("F‑003","Location choice at checkout","Per-product location honoured","part","Bot flow has no location pick; _default_panel grabs first non-/all product"),
+  F("F‑004","Automated config creation","Create panel user, return config/sub","done","panels/service.py::create_user"),
+  F("F‑005","Wallet purchase","Deduct balance then provision, atomically","bug","Provisions &amp; commits invoice BEFORE charging; failed charge → free config; double-spend race"),
+  F("F‑006","Online-gateway product purchase","Pay via gateway → provision product","bug","No invoice_id on order → mis-routed to (broken) wallet top-up; product code discarded"),
+  F("F‑007","Discount at checkout","Percent / fixed / limits / per-product","bug","Only fixed applied; percent ignored; used_count not incremented; expiry &amp; DiscountSell unused"),
+  F("F‑008","One-purchase-per-plan guard","one_buy_status blocks re-buy","part","Enforced in Mini-App only, not bot buy path"),
+  F("F‑009","QR code for config","QR image of config / sub","miss","Not found in rewrite"),
+  F("F‑010","Sub link / /sub proxy","Proxy subscription content","imp","api/subproxy.py; subvip rewrite"),
+  F("F‑011","Protocol / inbound config","Product inbounds + protocol table","part","inbounds passed through; protocol table absent from model"),
+ ]],
+ ["4.2 · Service management",[
+  F("F‑012","View purchased services","List invoices + live panel data","done","services.py, mini_invoices (ownership-checked)"),
+  F("F‑013","Renew / extend service","Add time (± volume / reset)","part","Volume math questionable; service_time semantics inconsistent"),
+  F("F‑014","Buy extra volume","Add GB to live config, paid","part","extra_volume modifies panel; payment linkage thin"),
+  F("F‑015","Buy extra time","Add days to live config, paid","part","extra_time; same payment caveat"),
+  F("F‑016","Change location (paid)","Recreate preserving quota, remove old","bug","create_user(data_limit=0, expire=now) → dead config; quota dropped"),
+  F("F‑017","Revoke subscription link","Rotate sub token","done","revoke_sub → adapter"),
+  F("F‑018","Config / sub retrieval","Re-send config &amp; link","done","services / mini-app"),
+  F("F‑019","User disable / enable service","User pauses a service","part","Simplified vs legacy disorder flow"),
+  F("F‑020","Cancel / delete service","cancel_service + admin review","part","Table exists; flow unconfirmed"),
+ ]],
+ ["4.3 · Payments &amp; wallet",[
+  F("F‑021","Wallet balance &amp; ledger","Balance + ad-hoc adjustments","imp","Append-only balance_ledger (auditable)"),
+  F("F‑022","Wallet top-up via gateway","Pay → credit balance","bug","settle_wallet_topup UNDEFINED (called 4×) → AttributeError"),
+  F("F‑023","Card-to-card (manual)","Receipt → admin approve → credit","part","card2card + croncard + paycheck; incomplete + shares broken settle"),
+  F("F‑024","Zarinpal","PG v4 verify","part","Module exists; settlement blocked by F‑006/022"),
+  F("F‑025","Aqayepardakht","Code-70 replay-safe","part","Module exists; settlement caveat"),
+  F("F‑026","NowPayments","Crypto webhook + poll","part","Module + poll; settlement caveat"),
+  F("F‑027","Plisio","Crypto poll","part","Module + poll; settlement caveat"),
+  F("F‑028","IranPay","Factor poll","part","Legacy return-in-while bug fixed; settlement caveat"),
+  F("F‑029","CubePay (TRON)","HMAC callback + result page","imp","Signed callback, fee math, HTML card; unit-tested offline"),
+  F("F‑030","Telegram Stars","Invoice, pre-checkout, settle","bug","Settlement calls undefined settle_wallet_topup → crash"),
+  F("F‑031","Payment idempotency","Avoid double-settlement","imp","claim_paid atomic UPDATE…WHERE Unpaid"),
+  F("F‑032","Payment report → channel","Rich report to report group","bug","_report() is a no-op placeholder"),
+  F("F‑033","User notification on payment","DM buyer on success","bug","_notify_user(None, …) — bot hardcoded None"),
+  F("F‑034","Pending-payment expiry","Expire stale orders","done","payment_expire job (fail after 1h)"),
+ ]],
+ ["4.4 · Bot UX &amp; onboarding",[
+  F("F‑035","/start, menu, deep-link","Menu + ref_ capture","done","menu.py"),
+  F("F‑036","Language switch (fa/en/ru/zh)","Per-user language","done","i18n + middleware"),
+  F("F‑037","Accept-rules gate","Must accept before use","miss","Legacy acceptRules not observed"),
+  F("F‑038","Forced channel membership","Multi-channel mandatory join","part","Single channel_lock only; channels table not enforced; _check_member fails open"),
+  F("F‑039","Phone / number verification","iran_number blocks purchase","part","/api/verify sets status; no enforcement in purchase path"),
+  F("F‑040","Ban / block enforcement","Blocked users can't act","done","AuthMiddleware + mini-app check"),
+  F("F‑041","FSM / step persistence","Step + scratch in DB","risk","Process-local dicts (buy/topup/broadcast/sessions); lost on restart; multi-worker races"),
+ ]],
+ ["4.5 · Growth &amp; marketing",[
+  F("F‑042","Referral link + count","Show link, count referred","done","misc.affiliates, menu captures referrer_id"),
+  F("F‑043","Referral commission payout","Referrer earns on referred buy","miss","porsant_one_buy / reagent_report / status_commission unused"),
+  F("F‑044","Cashback rewards","Cashback on spend","miss","Only hardcoded cashback=0 in _settle"),
+  F("F‑045","Discount codes (admin)","Create % / fixed, limits","part","/giftcode creates inert code (percent=0/price=0)"),
+  F("F‑046","Gift codes","Redeemable credit + scheduled drops","bug","Consumed count collapses to ≤1; gift job is return None"),
+  F("F‑047","Lottery (scheduled draw)","cronbot/lottery.php periodic draw","miss","No lottery job (main has 17, rewrite ships 16)"),
+  F("F‑048","Lucky wheel (daily)","Daily spin, admin prizes","bug","Hardcoded WHEEL_PRIZES; /wheelprizes setting never read"),
+ ]],
+ ["4.6 · Agent / reseller",[
+  F("F‑049","Agent grant / revoke / list","Multiple agent levels","part","Single agent_level='a'"),
+  F("F‑050","Agent request approval","Request → admin approve","part","No user notify / panel grant on approval"),
+  F("F‑051","Agent types &amp; pricing (n/n2)","Distinct reseller tiers","miss","Not ported"),
+  F("F‑052","Agent expiry","Auto-demote expired agents","done","expireagent job"),
+  F("F‑053","Agent panel provisioning","mirza_agent.php","part","Adapter present; not deep-verified"),
+ ]],
+ ["4.7 · Support &amp; content",[
+  F("F‑054","Support contact","Show support handle","done","misc.support"),
+  F("F‑055","Ticketing via departments","Departmental tickets + tracking","part","extra.py + Departman; admin add/list only"),
+  F("F‑056","FAQ / tutorials browsing","Help entries by OS/category","done","menu help + help CRUD"),
+  F("F‑057","Tutorial media (photo/video)","Media-rich tutorials","part","/addhelp stores text only"),
+ ]],
+ ["4.8 · Admin management",[
+  F("F‑058","Stats dashboard","Rich financial / user stats","part","Counts + revenue only"),
+  F("F‑059","User management","Find / block / balance / limits","part","No maxbuyagent / changeloclimit / expireset / verify mgmt"),
+  F("F‑060","Product CRUD","Full create/edit/delete + fields","part","addproduct + list; no edit/delete; drops most fields"),
+  F("F‑061","Panel CRUD","Full editing incl. pricing/inbound","part","add + list + toggle; no edit; pricing/inbound/test not editable"),
+  F("F‑062","Category CRUD","Add/list/delete/reorder","done","add/list/delete"),
+  F("F‑063","Discount / gift CRUD","Full management","part","Create/list only"),
+  F("F‑064","Channel management","Register + lock multiple","part","add/list + single lock; multi not enforced"),
+  F("F‑065","Department CRUD","Manage departments","part","add/list only"),
+  F("F‑066","Manual sell (/sell)","Admin gifts a real plan","bug","Provisions data_limit=0; ignores product vol/days; arbitrary panel"),
+  F("F‑067","Broadcast","Text/media/pin/forward, batched","part","Text only; one DB session per user (O(N))"),
+  F("F‑068","Multiple admins + rule levels","admin table, permission levels","miss","AdminGate = only primary admin; contradicts PARITY ✅"),
+  F("F‑069","In-bot text customization","Edit any bot string from bot","miss","No settext/bottext handler — headline main feature"),
+  F("F‑070","Username generation methods","Multiple configurable strategies","part","random / number only"),
+  F("F‑071","Card-number management","Add/remove/toggle cards","miss","Model exists; no admin handler"),
+  F("F‑072","Report-topic configuration","Map reports → forum topics","miss","topicid model exists; no config UI"),
+  F("F‑073","Settings toggles","Dozens of operational flags","part","Web panel exposes ~5 keys"),
+  F("F‑074","Payments report (/payments)","Recent payments list","done","payments_report"),
+  F("F‑075","Lucky-wheel prize config","Configure prizes","bug","Writes wheel_prizes; wheel never reads it"),
+ ]],
+ ["4.9 · Scheduled jobs (cron)",[
+  F("F‑076","Expiry reminders → user","DM buyer before expiry + renew btns","bug","Only send_report to admin channel; customer never notified"),
+  F("F‑077","Volume warnings → user","DM at ≥80% usage","bug","Posts to report channel, not user"),
+  F("F‑078","Disable expired configs","Disable on panel + persist","bug","Disables on panel but never commits status"),
+  F("F‑079","Re-activate / renew configs","Re-enable renewed configs","done","activeconfig (commits)"),
+  F("F‑080","On-hold activation","Activate on-hold at first use","part","Job exists but no handler sets on_hold; day-count math bug"),
+  F("F‑081","Trial cleanup","Remove expired trials","done","configtest"),
+  F("F‑082","Node uptime monitor","Alert on down nodes","bug","Adapter built with ENCRYPTED password (not decrypted) → auth fails"),
+  F("F‑083","Panel uptime monitor","Alert on unreachable panels","done","uptime_panel"),
+  F("F‑084","Automatic backups","pg_dump / mysqldump / sqlite","part","backup.py present; not deep-verified"),
+  F("F‑085","Daily status report","Rich nightly financial report","part","New-user + counts only"),
+ ]],
+ ["4.10 · Web / HTTP surfaces",[
+  F("F‑086","Web admin panel","Full CRUD admin (~90k bytes PHP)","part","List-only dashboards + 5-key settings; in-memory sessions"),
+  F("F‑087","Mini-App backend API","Signed-request user API","done","Session-token identity, ownership checks, initData HMAC"),
+  F("F‑088","Mini-App static serving","Serve the SPA bundle","done","miniapp_static.py"),
+  F("F‑089","Telegram webhook + secret","Receive updates","risk","Validates secret (improvement) but fails open if unset"),
+  F("F‑090","Sub proxy","Serve subscription content","imp","subproxy.py"),
+  F("F‑091","White-label child bots","Per-child dispatch (botsaz)","part","whitelabel.py + model; not deep-verified"),
+  F("F‑092","Machine API tokens","hash.txt token auth for /api","done","auth (constant-time) + session dual-auth"),
+ ]],
+ ["4.11 · Data &amp; infrastructure",[
+  F("F‑093","DB schema parity","~30 MySQL tables","part","29 modelled well; protocol table missing; setting redesigned to KV (no compat view)"),
+  F("F‑094","Migrations","Schema versioning","bug","0001_initial is create_all in disguise; dead col_defs loop; no real DDL"),
+  F("F‑095","Panel password encryption","(plaintext in main)","risk","Fernet at rest (improvement); key from change-me default = known key"),
+  F("F‑096","Installer","Apache/PHP/MySQL/certbot","part","systemd + Caddy + alembic; different stack, unverified"),
+ ]],
+];
+const host=document.getElementById("paritytables");
+GROUPS.forEach(([title,rows])=>{
+  const wrap=document.createElement("div");wrap.className="tbl-scroll";
+  const t=document.createElement("table");
+  t.innerHTML=`<caption>${title}</caption>
+    <thead><tr><th style="width:4.5rem">ID</th><th>Feature</th><th>Main behaviour</th><th style="width:6.5rem">Status</th><th>Notes</th></tr></thead>
+    <tbody>${rows.map(r=>{
+      const [cls,ic]=S[r.st];
+      return `<tr><td class="id">${r.id}</td><td class="feat">${r.feat}</td>
+        <td class="note">${r.main}</td>
+        <td class="stcell"><span class="st ${cls}">${ic}</span></td>
+        <td class="note">${r.note}</td></tr>`;
+    }).join("")}</tbody>`;
+  wrap.appendChild(t);host.appendChild(wrap);
+});
+// area rows (report §7)
+const AR=[["Web / HTTP surfaces",86],["Support &amp; content",75],["Service management",63],["Bot UX &amp; onboarding",60],["Payments &amp; wallet",56],["Purchase &amp; provisioning",55],["Data &amp; infrastructure",55],["Scheduled jobs",53],["Agent / reseller",50],["Admin management",41],["Growth &amp; marketing",31]];
+const arb=document.getElementById("areaRows");
+AR.forEach(([a,p])=>{
+  const col=p<45?"var(--bug)":p<66?"var(--warn)":"var(--good)";
+  const read=p<45?"Weak — major gaps":p<66?"Partial — needs work":"Solid";
+  arb.innerHTML+=`<tr><td class="feat">${a}</td>
+    <td style="width:34%"><div style="display:flex;align-items:center;gap:.6rem">
+      <div style="flex:1;background:var(--panel-2);border:1px solid var(--line-2);border-radius:5px;height:16px;overflow:hidden">
+        <div style="width:${p}%;height:100%;background:${col};border-radius:5px"></div></div>
+      <span class="mono tnum" style="font-weight:600;color:${col};width:2.8em;text-align:right">${p}%</span></div></td>
+    <td class="note">${read}</td></tr>`;
+});
+</script>
+</body>
+</html>

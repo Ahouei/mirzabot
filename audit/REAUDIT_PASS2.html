@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mirza Re-audit Pass 2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#eef1f5; --paper:#fff; --panel-2:#f5f7fb; --line:#dce2ec; --line-2:#e7ebf2;
+  --ink:#1a212b; --ink-2:#455060; --ink-3:#77839a;
+  --accent:#3a5bd9; --accent-2:#2a46b8; --accent-soft:#e6eafb;
+  --good:#2f9e6b; --warn:#c9821f; --bug:#cf4457; --risk:#7d54c9; --miss:#748196;
+  --good-s:#e4f2ea; --warn-s:#f7ecd7; --bug-s:#f9e2e6; --risk-s:#efe7f9; --miss-s:#eaeef3;
+  --shadow:0 1px 2px rgba(20,30,50,.05),0 8px 26px rgba(20,30,50,.07); --radius:13px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1015; --paper:#151a21; --panel-2:#1a2029; --line:#28303c; --line-2:#222a34;
+  --ink:#e9edf3; --ink-2:#a9b5c5; --ink-3:#76839a;
+  --accent:#8098ff; --accent-2:#93a7ff; --accent-soft:#1d2740;
+  --good:#43c088; --warn:#e0a144; --bug:#e56a7b; --risk:#a985e8; --miss:#8895aa;
+  --good-s:#132a20; --warn-s:#2b2312; --bug-s:#2c1519; --risk-s:#1f1830; --miss-s:#1a2029;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1015; --paper:#151a21; --panel-2:#1a2029; --line:#28303c; --line-2:#222a34;
+  --ink:#e9edf3; --ink-2:#a9b5c5; --ink-3:#76839a;
+  --accent:#8098ff; --accent-2:#93a7ff; --accent-soft:#1d2740;
+  --good:#43c088; --warn:#e0a144; --bug:#e56a7b; --risk:#a985e8; --miss:#8895aa;
+  --good-s:#132a20; --warn-s:#2b2312; --bug-s:#2c1519; --risk-s:#1f1830; --miss-s:#1a2029;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--panel-2);border:1px solid var(--line-2);border-radius:5px;padding:.05em .38em;color:var(--accent-2)}
+.tnum{font-variant-numeric:tabular-nums}
+.wrap{max-width:960px;margin:0 auto;padding:clamp(1rem,3vw,2.5rem)}
+.head{border-bottom:1px solid var(--line);padding-bottom:1.5rem;margin-bottom:1.8rem}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-weight:600;font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.1;margin:.5rem 0 .3rem;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--ink-2);font-size:1rem;max-width:62ch}
+.facts{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.2rem}
+.fact{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.45rem .7rem;font-size:.75rem;box-shadow:var(--shadow)}
+.fact b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:600;display:block;font-size:.9rem;margin-top:.1rem}
+.fact span{color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em}
+h2{font-weight:600;font-size:1.3rem;margin:2.2rem 0 1rem;display:flex;gap:.55rem;align-items:baseline}
+h2 .n{font-family:"IBM Plex Mono",monospace;font-size:.85rem;color:var(--accent);font-weight:600}
+.prose p{font-family:"Newsreader",Georgia,serif;font-size:1.07rem;line-height:1.65;color:var(--ink);max-width:66ch;margin:0 0 1rem}
+.prose strong{font-family:"IBM Plex Sans";font-weight:600}
+
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:1.3rem;align-items:center;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--good);border-radius:var(--radius);padding:1.3rem 1.4rem;box-shadow:var(--shadow);margin:1.4rem 0}
+@media(max-width:560px){.verdict{grid-template-columns:1fr}}
+.move{display:flex;align-items:center;gap:.6rem;font-family:"IBM Plex Mono",monospace;font-weight:600}
+.move .from{font-size:1.5rem;color:var(--ink-3)}
+.move .arr{color:var(--good)}
+.move .to{font-size:2.4rem;color:var(--good);letter-spacing:-.02em;line-height:1}
+.move small{display:block;font-family:"IBM Plex Sans";font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-top:.35rem}
+.tag{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .65rem;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--good-s);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 30%,transparent)}
+.vt{color:var(--ink-2);font-size:.92rem;margin-top:.55rem}
+
+.barcmp{display:flex;flex-direction:column;gap:.7rem;margin:1rem 0}
+.barrow{display:grid;grid-template-columns:5.5rem 1fr;gap:.7rem;align-items:center;font-size:.8rem}
+.barrow .lbl{color:var(--ink-3);font-family:"IBM Plex Mono",monospace;text-align:right}
+.stack{display:flex;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--line)}
+.stack span{display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:.66rem;font-weight:600;color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:.4rem;font-size:.76rem;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:.35rem;vertical-align:middle}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin:.5rem 0 1rem}
+table{width:100%;border-collapse:collapse;font-size:.85rem;background:var(--paper);min-width:600px}
+caption{caption-side:top;text-align:left;font-weight:600;font-size:.92rem;padding:.7rem .9rem .1rem}
+th,td{padding:.5rem .75rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-2)}
+thead th{background:var(--panel-2);font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--panel-2)}
+td.id{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink-3);white-space:nowrap;font-weight:500}
+td.note{color:var(--ink-2);font-size:.82rem}
+.v{display:inline-flex;align-items:center;gap:.3rem;font-weight:600;font-size:.72rem;padding:.13rem .48rem;border-radius:6px;white-space:nowrap;border:1px solid transparent}
+.v-ok{background:var(--good-s);color:var(--good);border-color:color-mix(in srgb,var(--good) 25%,transparent)}
+.v-okt{background:var(--good-s);color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
+.v-part{background:var(--warn-s);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 28%,transparent)}
+.v-def{background:var(--miss-s);color:var(--miss);border-color:color-mix(in srgb,var(--miss) 30%,transparent)}
+
+.callout{border-radius:var(--radius);padding:1.1rem 1.25rem;margin:1.2rem 0;border:1px solid var(--line);background:var(--warn-s);border-left:4px solid var(--warn);box-shadow:var(--shadow)}
+.callout h4{margin:0 0 .5rem;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.callout ol{margin:0;padding-left:1.2rem}
+.callout li{margin:.5rem 0;font-size:.92rem;color:var(--ink)}
+.callout li b{font-weight:600}
+ul.plain{margin:.6rem 0;padding-left:1.2rem}
+ul.plain li{margin:.4rem 0;font-size:.93rem;color:var(--ink-2)}
+ul.plain li b{color:var(--ink)}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:1rem 0;display:flex;flex-direction:column;gap:.55rem}
+ol.steps li{counter-increment:s;position:relative;padding:.6rem .9rem .6rem 2.9rem;background:var(--paper);border:1px solid var(--line);border-radius:10px;font-size:.92rem;box-shadow:var(--shadow)}
+ol.steps li::before{content:counter(s);position:absolute;left:.7rem;top:50%;transform:translateY(-50%);width:1.6rem;height:1.6rem;border-radius:50%;background:var(--accent);color:#fff;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.78rem;display:flex;align-items:center;justify-content:center}
+footer{border-top:1px solid var(--line);margin-top:2.4rem;padding-top:1.2rem;color:var(--ink-3);font-size:.79rem;line-height:1.7}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="eyebrow">Re-audit · Pass 2 · Verification of tranche-1 fixes</div>
+    <h1>ox-alpha's fixes, independently verified</h1>
+    <p class="sub">Every fix the implementer claimed was re-read in the actual code of <span class="mono">rewrite/python@c7e0fee</span>, and the new money-path tests were read line-by-line — the same "trust nothing until read" discipline applied to <span class="mono">PARITY.md</span> in pass 1.</p>
+    <div class="facts">
+      <div class="fact"><span>Re-audited head</span><b>c7e0fee</b></div>
+      <div class="fact"><span>Fix commit</span><b>74dba0e</b></div>
+      <div class="fact"><span>Files changed</span><b>14</b></div>
+      <div class="fact"><span>New money tests</span><b>3</b></div>
+      <div class="fact"><span>Method</span><b>static</b></div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="move">
+      <span class="from">55%</span><span class="arr">→</span>
+      <span><span class="to">64%</span><small>weighted parity</small></span>
+    </div>
+    <div>
+      <span class="tag">✓ Accept tranche 1 — real, tested, safe to build on</span>
+      <div class="vt">The CRITICAL money-path block went from <b>0 of 4 working</b> to <b>≈3.5 of 4</b>: a customer can now pay via an online gateway and actually receive their config, and a wallet top-up credits instead of crashing. The response doc is candid and accurate. Two residuals remain (§3) and the branch is not yet production-ready — but this is a materially different, much healthier branch than pass 1.</div>
+    </div>
+  </div>
+
+  <section>
+    <h2><span class="n">01</span> Status movement</h2>
+    <div class="barcmp">
+      <div class="barrow"><div class="lbl">Pass 1</div>
+        <div class="stack">
+          <span style="width:28.1%;background:var(--good)" title="Done 27">27</span>
+          <span style="width:41.7%;background:var(--warn)" title="Partial 40">40</span>
+          <span style="width:16.7%;background:var(--bug)" title="Buggy 16">16</span>
+          <span style="width:3.1%;background:var(--risk)" title="Risky 3"></span>
+          <span style="width:10.4%;background:var(--miss)" title="Missing 10">10</span>
+        </div></div>
+      <div class="barrow"><div class="lbl">Pass 2</div>
+        <div class="stack">
+          <span style="width:38.5%;background:var(--good)" title="Done 37">37</span>
+          <span style="width:43.8%;background:var(--warn)" title="Partial 42">42</span>
+          <span style="width:5.2%;background:var(--bug)" title="Buggy 5">5</span>
+          <span style="width:3.1%;background:var(--risk)" title="Risky 3"></span>
+          <span style="width:9.4%;background:var(--miss)" title="Missing 9">9</span>
+        </div></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--good)"></i>Done 27→<b>37</b></span>
+      <span><i style="background:var(--warn)"></i>Partial 40→<b>42</b></span>
+      <span><i style="background:var(--bug)"></i>Buggy 16→<b>5</b></span>
+      <span><i style="background:var(--risk)"></i>Risky 3→<b>3</b></span>
+      <span><i style="background:var(--miss)"></i>Missing 10→<b>9</b></span>
+    </div>
+    <div class="prose" style="margin-top:1rem"><p>Eleven items left the buggy column: <span class="mono">F-006/022/030/032/033</span> (the whole gateway/Stars settlement chain), <span class="mono">F-016</span> (change-location), <span class="mono">F-048/075</span> (lucky wheel + prize config), <span class="mono">F-078</span> (disable-config commit), <span class="mono">F-082</span> (node uptime). <span class="mono">F-005</span> moved buggy→risky (ordering fixed, race open) and <span class="mono">F-068</span> missing→partial (admin gating, level 1).</p></div>
+  </section>
+
+  <section>
+    <h2><span class="n">02</span> Independent verification</h2>
+    <div class="tbl">
+      <table>
+        <caption>CRITICAL — money path</caption>
+        <thead><tr><th>ID</th><th>Claim</th><th>Verdict</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td class="id">C1</td><td class="note">settle_wallet_topup restored</td><td><span class="v v-okt">✓ confirmed + test</span></td><td class="note">Defined <code>service.py:135</code>; test asserts exactly-once credit + idempotent replay.</td></tr>
+          <tr><td class="id">C2</td><td class="note">gateway purchase sets invoice_id</td><td><span class="v v-okt">✓ confirmed + test</span></td><td class="note"><code>pay_gateway</code> writes pending invoice first; test drives real <code>settle()</code>, asserts invoice→enable, <b>ledger empty</b>.</td></tr>
+          <tr><td class="id">C3</td><td class="note">buyer DM + admin report</td><td><span class="v v-part">◑ partial</span></td><td class="note">Bot threaded for 5 gateways. <b>Residual:</b> cubepay's <code>settle_tuple</code> still notifies <code>None</code> &amp; skips <code>_report</code>. Topic threading deferred.</td></tr>
+          <tr><td class="id">C4</td><td class="note">charge-first + atomic decrement</td><td><span class="v v-part">◑ partial</span></td><td class="note">Ordering <b>fixed</b> (charge→provision→refund). <b>Residual:</b> <code>change()</code> is read-modify-write, not atomic — concurrency double-spend still possible on PostgreSQL.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl">
+      <table>
+        <caption>HIGH</caption>
+        <thead><tr><th>ID</th><th>Claim</th><th>Verdict</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td class="id">H1</td><td class="note">changeloc preserves quota</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note">Reads source config, carries remaining bytes/days, removes old.</td></tr>
+          <tr><td class="id">H4</td><td class="note">disableconfig commits</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note"><code>await s.commit()</code> added at <code>builtin.py:88</code>.</td></tr>
+          <tr><td class="id">H5</td><td class="note">DB-backed admin gating (L1)</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note">Reads <code>admin</code> table (60s cache); rule levels deferred (H5b).</td></tr>
+          <tr><td class="id">H6</td><td class="note">uptime_node decrypts</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note">Decrypts via <code>_decrypt_secret</code> before building the adapter.</td></tr>
+          <tr><td class="id">H2 · H3 · H7 · H8</td><td class="note">deferred to tranche 2</td><td><span class="v v-def">— accurate</span></td><td class="note">Not claimed fixed; pass-1 findings stand (manual_sell, reminder DMs, real migration, persistent state).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl">
+      <table>
+        <caption>MEDIUM / LOW</caption>
+        <thead><tr><th>ID</th><th>Claim</th><th>Verdict</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td class="id">M2</td><td class="note">gift code value + count</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note">Real percent; count via <code>COUNT(*) GROUP BY</code>. Redemption increment with M1.</td></tr>
+          <tr><td class="id">M3</td><td class="note">wheel reads config</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note"><code>_wheel_prizes</code> reads the setting, falls back to defaults.</td></tr>
+          <tr><td class="id">M10</td><td class="note">mini-app wallet inline settle</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note">charge→provision→refund (402/502).</td></tr>
+          <tr><td class="id">L1</td><td class="note">dead/insecure code removed</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note">Shadowed insecure <code>miniapp</code>, placeholder app, <code>_TOPUP_UNUSED</code>, <code>_expire_from</code> all gone.</td></tr>
+          <tr><td class="id">L4</td><td class="note">boot refuses default secret</td><td><span class="v v-ok">✓ confirmed</span></td><td class="note"><code>server.py:38-41</code> SystemExit on empty token / default session secret.</td></tr>
+          <tr><td class="id">M1 · M4-M9 · L2 · L3 · L5</td><td class="note">deferred</td><td><span class="v v-def">— accurate</span></td><td class="note">Honestly labelled; matches pass 1.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">03</span> Residuals the response under-states</h2>
+    <div class="callout">
+      <h4>Act on these — they finish the CRITICAL block properly</h4>
+      <ol>
+        <li><b>C4 is not race-safe.</b> The provision-before-charge bug is genuinely fixed, but "atomic conditional decrement" is inaccurate — <code>WalletService.change</code> reads then writes in Python with no row lock. Two concurrent wallet buys can still double-spend on PostgreSQL. <b>Fix:</b> a single atomic <code>UPDATE "user" SET balance = balance - :amt WHERE id=:id AND balance &gt;= :amt</code> (act on rowcount), or <code>SELECT … FOR UPDATE</code> before the check.</li>
+        <li><b>cubepay settlement is still silent.</b> <code>settle_tuple</code> (cubepay only) passes <code>bot=None</code> and skips <code>_report</code>. <b>Fix:</b> thread the bot into <code>settle_tuple</code> like <code>settle</code> does, and call <code>_report</code> there.</li>
+      </ol>
+    </div>
+    <div class="prose"><p><strong>Test-suite check.</strong> The response reports "45 passed." I did not execute the suite (still a static pass) but read <code>tests/test_money_path.py</code> in full: the gateway-provision and top-up tests are <strong>genuine</strong> — they drive the real <code>settle()</code> and assert the criteria that matter (invoice activated, order paid, wallet untouched / credited once), and would fail on the pass-1 code. The third test only unit-checks the charge refusal — it does not exercise the full flow or the concurrency case. Net: honest tests, not gamed; the one missing dimension is exactly the C4 residual above.</p></div>
+  </section>
+
+  <section>
+    <h2><span class="n">04</span> What still stands between this and replacing <span class="mono" style="font-size:.8em">main</span></h2>
+    <ol class="steps">
+      <li><b>Finish CRITICAL:</b> close the C4 atomic-debit race and the cubepay notify/report gap — both small.</li>
+      <li><b>Tranche-2 revenue items</b> (implementer's own list, agreed): customer expiry-reminder DMs, discount engine + redemption increments, referral commission &amp; cashback, trial per-panel config, on-hold + <code>service_time</code> semantics, real DDL migration + settings view, persistent FSM/sessions.</li>
+      <li><b>Tranche-3 breadth:</b> in-bot text customization and the rest of the admin surface, lottery/gift jobs, web-CRUD decision.</li>
+      <li><b>Dynamic pass (still owed):</b> execute the 45 tests; each panel adapter against a real panel; Alembic up/down on PostgreSQL; gateway callbacks against sandboxes; installer; white-label dispatch.</li>
+    </ol>
+  </section>
+
+  <footer>
+    Re-audit pass 2 · verified statically against <span class="mono">rewrite/python@c7e0fee</span> · 2026-08-25. Every ✓ was re-read in the source; the two residuals in §3 were found by reading past the response's summary, not taken from it. Companion to the pass-1 report and PMO dashboard.
+  </footer>
+</div>
+</body>
+</html>
